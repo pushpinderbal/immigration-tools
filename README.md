@@ -20,10 +20,6 @@ npm run build
 
 `npm run build` runs typecheck plus the production build.
 
-## Project structure
-
-Each calculator is a pure scoring module in `src/lib/<province>/score.ts` with a `score()` function and an `eligibility()` function, plus a tool page in `src/routes/<province>/`. Shared UI such as the score sidebar, eligibility banner, and map lives in `src/components/`.
-
 ## Disclaimers
 
 Not affiliated with any government agency. Immigration rules change often. These are estimates for planning, not legal advice. Confirm anything important against the official IRCC or provincial pages.
