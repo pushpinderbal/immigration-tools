@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Segmented } from './ui'
+import { cn, Segmented } from './ui'
 
 function useDirection(value: number): 'up' | 'down' | 'none' {
   const prev = useRef(value)
@@ -105,11 +105,41 @@ export function ToolSidebar({
   draws?: ReactNode
 }) {
   const [tab, setTab] = useState<'breakdown' | 'draws'>('breakdown')
+  const [open, setOpen] = useState(false)
   const hasDraws = draws !== undefined
 
+  const onTabChange = (v: 'breakdown' | 'draws') => {
+    if (v === 'breakdown') {
+      if (tab === 'breakdown') {
+        setOpen(!open)
+      } else {
+        setTab('breakdown')
+        setOpen(true)
+      }
+    } else {
+      setTab('draws')
+    }
+  }
+
+  const breakdownLabel = (
+    <span className="inline-flex items-center gap-1">
+      Breakdown
+      <svg
+        aria-hidden="true"
+        className={cn('h-3 w-3 transition-transform', tab === 'breakdown' && open && 'rotate-180')}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </span>
+  )
+
   return (
-    <div className="no-scrollbar space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto lg:pb-1">
-      <div className="lg:sticky lg:top-0 lg:z-10">
+    <div className="no-scrollbar contents lg:block lg:space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto lg:pb-1">
+      <div className="order-first sticky top-0 z-10">
         <div className="rounded-2xl border border-line bg-panel p-5 shadow-[0_1px_3px_rgb(15_23_42/0.06)]">
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
           <div className="flex items-center gap-4">
@@ -128,26 +158,32 @@ export function ToolSidebar({
         </div>
       </div>
 
-      {hasDraws ? (
-        <Segmented
-          ariaLabel="Sidebar"
-          value={tab}
-          onChange={(v) => setTab(v)}
-          options={[
-            { value: 'breakdown', label: 'Breakdown' },
-            { value: 'draws', label: 'Historical draws' },
-          ]}
-        />
-      ) : (
-        <Segmented
-          ariaLabel="Sidebar"
-          value="breakdown"
-          onChange={() => {}}
-          options={[{ value: 'breakdown', label: 'Points breakdown' }]}
-        />
-      )}
+      <div className="order-first">
+        {hasDraws ? (
+          <Segmented
+            ariaLabel="Sidebar"
+            value={tab}
+            onChange={onTabChange}
+            options={[
+              { value: 'breakdown', label: breakdownLabel },
+              { value: 'draws', label: 'Historical draws' },
+            ]}
+          />
+        ) : (
+          <Segmented
+            ariaLabel="Sidebar"
+            value={tab}
+            onChange={onTabChange}
+            options={[{ value: 'breakdown', label: breakdownLabel }]}
+          />
+        )}
+      </div>
 
-      {hasDraws && tab === 'draws' ? draws : breakdown}
+      {hasDraws && tab === 'draws' ? (
+        <div className="order-first">{draws}</div>
+      ) : open ? (
+        <div className="order-first">{breakdown}</div>
+      ) : null}
     </div>
   )
 }

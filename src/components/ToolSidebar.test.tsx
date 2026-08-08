@@ -18,19 +18,27 @@ function renderSidebar(total = 1200, withDraws = false) {
 }
 
 describe('ToolSidebar', () => {
-  it('shows the total with a static Points breakdown tab', () => {
+  it('shows the total with a Breakdown tab that is collapsed by default', () => {
     renderSidebar()
     expect(screen.getByRole('status').textContent).toBe('1200')
-    expect(screen.getByRole('button', { name: 'Points breakdown' })).toBeTruthy()
-    expect(screen.getByText('breakdown rows')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Breakdown' })).toBeTruthy()
+    expect(screen.queryByText('breakdown rows')).toBeNull()
     expect(screen.queryByText('Historical draws')).toBeNull()
+  })
+
+  it('expands and collapses the breakdown when the tab is clicked', () => {
+    renderSidebar()
+    fireEvent.click(screen.getByRole('button', { name: 'Breakdown' }))
+    expect(screen.getByText('breakdown rows')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Breakdown' }))
+    expect(screen.queryByText('breakdown rows')).toBeNull()
   })
 
   it('shows Breakdown and Historical draws tabs when draws are provided', () => {
     renderSidebar(1200, true)
     expect(screen.getByRole('button', { name: 'Breakdown' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Historical draws' })).toBeTruthy()
-    expect(screen.getByText('breakdown rows')).toBeTruthy()
+    expect(screen.queryByText('breakdown rows')).toBeNull()
   })
 
   it('switches to the draws tab when selected', () => {

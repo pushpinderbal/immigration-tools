@@ -99,7 +99,7 @@ export function Segmented<T extends string>({
 }: {
   value: T
   onChange: (value: T) => void
-  options: ReadonlyArray<{ value: T; label: string }>
+  options: ReadonlyArray<{ value: T; label: ReactNode }>
   ariaLabel?: string
 }) {
   return (
@@ -117,7 +117,7 @@ export function Segmented<T extends string>({
             aria-pressed={active}
             onClick={() => onChange(o.value)}
             className={cn(
-              'h-8 rounded-md text-xs font-medium transition-colors',
+              'h-8 whitespace-nowrap rounded-md px-3 text-xs font-medium transition-colors',
               active
                 ? 'bg-accent text-white shadow-sm'
                 : 'bg-transparent text-muted hover:bg-accent-soft hover:text-ink',

@@ -181,7 +181,7 @@ export function CrsTool() {
         how each factor was awarded.
       </p>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-5">
           <Section title="Profile" help={IRCC_GRID}>
             <div className="grid gap-3 sm:grid-cols-2">

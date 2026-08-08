@@ -145,7 +145,7 @@ export function ManitobaTool() {
         <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-5">
           <Section title="Language" help={MB_LANGUAGE_DOC}>
             <LanguageTestInputs

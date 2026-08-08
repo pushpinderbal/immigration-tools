@@ -19,7 +19,7 @@ Guidance for AI agents working in this repo. It is a React 19 + TypeScript + Tai
 
 - Each calculator is a pure scoring module in `src/lib/<province>/score.ts` (a `score(input)` function) plus a tool page in `src/routes/<province>/`. Use the OINP tool (`src/routes/oinp/OinpTool.tsx`) as the reference pattern.
 - Each module also exports `eligibility(input)` returning `{ eligible, reasons }`, surfaced via the shared `EligibilityBanner`. Every scoring field gets a `help` prop linking to the official government doc.
-- Tool pages render their score via `ToolSidebar` (pot gauge with total/max, plus a breakdown as `<ScoreCard variant="breakdown" />`). The federal CRS sidebar passes a `draws` prop for a "Breakdown / Historical draws" tab switcher; other tools show a static "Points breakdown" tab.
+- Tool pages render their score via `ToolSidebar` (pot gauge with total/max, plus a collapsible breakdown as `<ScoreCard variant="breakdown" />`, collapsed by default). The federal CRS sidebar passes a `draws` prop for a "Breakdown / Historical draws" tab switcher; other tools show a single "Breakdown" tab that toggles the breakdown open and closed.
 - The tool switcher at the top of tool pages is `ToolTiles` (`<ToolTiles current="<tool-id>" />`).
 - The draws feed (`DrawFeed`) is client-side IRCC JSON (parse `drawNumberURL`, `drawText2`, `drawCRS`, `drawSize`; do not assume the feed filename is stable). Provincial tools do not render it yet.
 - The landing page map is `src/components/CanadaMap.tsx`, rendering paths from `@svg-maps/canada` (lazy-loaded via `React.lazy`). Which provinces are clickable is driven by the `PROVINCE_ROUTES` map inside the component.
