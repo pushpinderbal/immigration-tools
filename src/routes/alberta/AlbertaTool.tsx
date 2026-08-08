@@ -145,7 +145,7 @@ export function AlbertaTool() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
       <Seo
         title="Alberta AAIP Points Calculator | ImmiCalc"
-        description="Work out your Alberta Advantage Immigration Program (AAIP) Worker Expression of Interest points with this free calculator. Runs entirely in your browser."
+        description="A straightforward AAIP points check for Alberta's Worker stream - a few simple questions, instant result."
         path="/alberta"
       />
       <ToolTiles current="alberta" />

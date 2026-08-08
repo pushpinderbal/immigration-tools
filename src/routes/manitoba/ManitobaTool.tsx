@@ -131,7 +131,7 @@ export function ManitobaTool() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
       <Seo
         title="Manitoba MPNP Points Calculator | ImmiCalc"
-        description="Work out your Manitoba Provincial Nominee Program (MPNP) Expression of Interest (EOI) points with this free calculator. Runs entirely in your browser."
+        description="Get a straightforward MPNP Expression of Interest points estimate for Manitoba - a few simple questions, instant result."
         path="/manitoba"
       />
       <ToolTiles current="manitoba" />

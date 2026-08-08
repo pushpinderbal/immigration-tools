@@ -172,7 +172,7 @@ export function OinpTool() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
       <Seo
         title="OINP Points Calculator | ImmiCalc"
-        description="Work out your Ontario Workforce Priority stream Expression of Interest (EOI) points with this free calculator. Runs entirely in your browser."
+        description="Check your OINP Expression of Interest points with a few simple questions on your job offer, education, and language, and get an instant result."
         path="/oinp"
       />
       <ToolTiles current="oinp" />

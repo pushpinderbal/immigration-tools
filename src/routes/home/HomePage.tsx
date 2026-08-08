@@ -9,14 +9,15 @@ export function HomePage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pt-12 pb-16 sm:px-6">
       <Seo
-        title="Immigration tools | ImmiCalc"
-        description="Free Canadian immigration point calculators for Express Entry and the provinces. Everything runs in your browser, and nothing you enter is stored or tracked."
+        title="Immigration Tools | ImmiCalc"
+        description="Quick, straightforward Canadian immigration point calculators for Express Entry CRS and the provincial programs. Answer a few simple questions and get an instant estimate - no sign-up."
         path="/"
       />
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Immigration tools</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Immigration Tools</h1>
         <p className="mt-3 text-base leading-relaxed text-muted">
-          Everything runs in your browser. Nothing you enter is stored or tracked.
+          A straightforward check of your Canadian immigration points. Answer a few questions, get an instant
+          estimate. Everything runs in your browser; nothing is stored or tracked.
         </p>
       </div>
 

@@ -171,7 +171,7 @@ export function CrsTool() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
       <Seo
         title="CRS Calculator | ImmiCalc"
-        description="Work out your Express Entry Comprehensive Ranking System (CRS) score with this free calculator. Runs entirely in your browser."
+        description="Get a straightforward CRS score estimate for Express Entry - answer a few simple questions on age, education, language, and experience, with an instant result."
         path="/crs"
       />
       <ToolTiles current="crs" />

@@ -69,7 +69,7 @@ export function CanadaMap() {
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">Provincial calculators</h2>
         <p className="text-xs text-muted" aria-live="polite">
-          {hoveredName ? `${hoveredName} - click to open` : 'Click a province'}
+          {hoveredName ? `${hoveredName} - click to open` : 'Choose a province'}
         </p>
       </div>
 

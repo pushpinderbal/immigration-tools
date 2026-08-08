@@ -126,7 +126,7 @@ export function BcTool() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
       <Seo
         title="BC PNP Points Calculator | ImmiCalc"
-        description="Work out your BC PNP Skills Immigration and Express Entry BC EOI points with this free calculator. Runs entirely in your browser."
+        description="Get a straightforward BC PNP points estimate for Skills Immigration and Express Entry BC - a few simple questions, instant result."
         path="/bc"
       />
       <ToolTiles current="bc" />

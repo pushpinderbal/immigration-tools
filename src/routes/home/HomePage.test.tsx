@@ -17,7 +17,7 @@ function renderHome() {
 describe('HomePage', () => {
   it('shows the heading and a link to the federal CRS calculator', () => {
     renderHome()
-    expect(screen.getByRole('heading', { name: 'Immigration tools' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Immigration Tools' })).toBeTruthy()
     const crs = screen.getByRole('link', { name: /Express Entry \(CRS\)/ })
     expect(crs.getAttribute('href')).toBe('/crs')
   })

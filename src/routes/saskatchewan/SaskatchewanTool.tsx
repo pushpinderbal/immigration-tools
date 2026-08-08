@@ -115,7 +115,7 @@ export function SaskatchewanTool() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
       <Seo
         title="SINP Points Calculator | ImmiCalc"
-        description="Work out your Saskatchewan Immigrant Nominee Program International Skilled Worker EOI points with this free calculator. Runs entirely in your browser."
+        description="A straightforward SINP points check for Saskatchewan's International Skilled Worker program - a few simple questions, instant result."
         path="/saskatchewan"
       />
       <ToolTiles current="saskatchewan" />
