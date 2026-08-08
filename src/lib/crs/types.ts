@@ -1,5 +1,5 @@
 /**
- * CRS (Comprehensive Ranking System) — domain types.
+ * CRS (Comprehensive Ranking System) - domain types.
  * Pure data, no framework dependencies.
  */
 

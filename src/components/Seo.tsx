@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const SITE_URL = 'https://tools.s1ngh.ca'
+const SITE_URL = 'https://immicalc.org'
 
 /**
  * Per-route SEO metadata: document title, meta description, canonical URL and

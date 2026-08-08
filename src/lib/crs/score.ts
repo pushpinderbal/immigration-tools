@@ -1,5 +1,5 @@
 /**
- * CRS scoring engine — pure functions, zero framework dependencies.
+ * CRS scoring engine - pure functions, zero framework dependencies.
  *
  * Verified against IRCC "Comprehensive Ranking System (CRS) criteria"
  * (canada.ca, updated 2026-06-22) and the official CRS tool's worked examples.
@@ -30,7 +30,7 @@ import {
   spouseLanguagePointsPerAbility,
 } from './tables'
 import { ADDITIONAL_CANADIAN_EDUCATION_TABLE, EDUCATION_TABLE } from './tables'
-import type { CrsBreakdown, CrsInput, LanguageProficiency } from './types'
+import type { CrsBreakdown, CrsInput } from './types'
 
 /** A. Core / human capital factors. Capped at 460 (with spouse) or 500 (without). */
 export function coreHumanCapitalPoints(input: CrsInput): number {
@@ -124,11 +124,4 @@ export function crsScore(input: CrsInput): CrsBreakdown {
   const additional = additionalPoints(input)
   const total = clamp(core + spouse + transferability + additional, 0, MAX_TOTAL)
   return { core, spouse, transferability, additional, total }
-}
-
-export const LANGUAGE_PROFICIENCY_EMPTY: LanguageProficiency = {
-  listening: 0,
-  reading: 0,
-  writing: 0,
-  speaking: 0,
 }

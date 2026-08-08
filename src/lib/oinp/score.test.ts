@@ -3,6 +3,7 @@ import {
   canadianCredentialsPoints,
   earningsPoints,
   educationPoints,
+  eligibility,
   languageAbilityPoints,
   legalStatusPoints,
   nocBroadPoints,
@@ -31,6 +32,7 @@ function base(overrides: Partial<OinpInput> = {}): OinpInput {
     englishClb: 7,
     frenchClb: 0,
     region: 'eastern',
+    recentOntarioGraduate: false,
     ...overrides,
   }
 }
@@ -130,11 +132,13 @@ describe('OINP Workforce Priority factor points (official grid)', () => {
     expect(languageAbilityPoints(0)).toBe(0)
   })
 
-  it('knowledge of official languages (CLB 6 threshold for two)', () => {
+  it('knowledge of official languages (CLB 6 threshold for one or both)', () => {
     expect(officialLanguagesPoints(6, 6)).toBe(10)
     expect(officialLanguagesPoints(7, 8)).toBe(10)
     expect(officialLanguagesPoints(7, 5)).toBe(5)
-    expect(officialLanguagesPoints(5, 0)).toBe(5)
+    expect(officialLanguagesPoints(0, 6)).toBe(5)
+    expect(officialLanguagesPoints(5, 0)).toBe(0)
+    expect(officialLanguagesPoints(5, 5)).toBe(0)
     expect(officialLanguagesPoints(4, 4)).toBe(0)
     expect(officialLanguagesPoints(0, 0)).toBe(0)
   })
@@ -203,5 +207,68 @@ describe('OINP total', () => {
   it('language uses the higher of English/French tests', () => {
     const score = oinpScore(base({ englishClb: 6, frenchClb: 8 }))
     expect(score.language).toBe(22) // ability 12 (best CLB 8) + 2-language 10
+  })
+
+  it('recent Ontario graduate status is eligibility-only and adds 0 points', () => {
+    const regular = oinpScore(base())
+    const recentGrad = oinpScore(base({ recentOntarioGraduate: true }))
+    expect(recentGrad.total).toBe(regular.total)
+    expect(recentGrad).toEqual(regular)
+  })
+
+  it('a profile with one official language at CLB 5 earns 0 bilingualism points', () => {
+    const score = oinpScore(base({ englishClb: 5 }))
+    // language: ability 0 (CLB 5 or lower) + knowledge 0 (needs CLB 6+) = 0
+    expect(score.language).toBe(0)
+  })
+})
+
+describe('OINP Workforce Priority eligibility (official requirements)', () => {
+  it('flags the default profile as eligible', () => {
+    expect(eligibility(base())).toEqual({ eligible: true, reasons: [] })
+  })
+
+  it('allows a recent Ontario graduate with under 6 months in the job offer position', () => {
+    const result = eligibility(base({ recentOntarioGraduate: true, tenureInPosition: 'less-6' }))
+    expect(result.eligible).toBe(true)
+    expect(result.reasons).toEqual([])
+  })
+
+  it('flags under 6 months in the position as ineligible for a TEER 0-3 job offer', () => {
+    const result = eligibility(base({ tenureInPosition: 'less-6' }))
+    expect(result.eligible).toBe(false)
+    expect(result.reasons).toEqual([
+      'TEER 0 to 3 job offers require at least 6 months of consecutive full-time work experience in the job offer position, gained within 12 months before you apply.',
+    ])
+  })
+
+  it('flags a TEER 4 or 5 job offer with under 9 months in the position as ineligible', () => {
+    const result = eligibility(base({ teer: 4, tenureInPosition: '6-12' }))
+    expect(result.eligible).toBe(false)
+    expect(result.reasons).toEqual([
+      'TEER 4 and 5 job offers require at least 9 months of cumulative full-time work experience in the job offer position, gained within 2 years before you apply.',
+    ])
+  })
+
+  it('accepts a TEER 4 or 5 job offer with 13 months or more in the position', () => {
+    const result = eligibility(base({ teer: 5, tenureInPosition: '13-24' }))
+    expect(result.eligible).toBe(true)
+    expect(result.reasons).toEqual([])
+  })
+
+  it('flags a candidate without valid legal status in Canada', () => {
+    const result = eligibility(base({ legalStatus: 'none' }))
+    expect(result.eligible).toBe(false)
+    expect(result.reasons).toEqual([
+      'You must have valid legal status in Canada, such as a valid work permit or study permit, at the time you apply.',
+    ])
+  })
+
+  it('lists every unmet requirement as a separate reason', () => {
+    const result = eligibility(base({ tenureInPosition: 'less-6', legalStatus: 'none' }))
+    expect(result.eligible).toBe(false)
+    expect(result.reasons).toHaveLength(2)
+    expect(result.reasons[0]).toMatch(/at least 6 months/)
+    expect(result.reasons[1]).toMatch(/legal status/)
   })
 })

@@ -1,8 +1,26 @@
 /**
- * OINP EOI scoring — Ontario Workforce Priority stream.
+ * OINP EOI scoring - Ontario Workforce Priority stream.
  *
  * Source: Ontario.ca "Ontario Workforce Priority stream" (updated 2026-08-04)
  * https://www.ontario.ca/page/ontario-workforce-priority-stream
+ *
+ * Revalidated 2026-08-08 against the current official grid. The Workforce
+ * Priority stream is Ontario's single active OINP stream (all eight former
+ * streams closed June 26, 2026). Field of study and location of study are NOT
+ * scored. The "1 official language" bilingualism points require CLB/NCLC 6 in
+ * at least one official language (not CLB 5).
+ *
+ * `recentOntarioGraduate` is an eligibility determination, not a scoring
+ * factor. A recent Ontario graduate (eligible Ontario institution within the
+ * last 3 years, with a qualifying credential) only needs 3 months in the job
+ * offer position instead of 6, but earns no extra EOI points.
+ *
+ * Eligibility: besides points, candidates must meet the stream's work
+ * experience and legal status requirements. The job offer position requires 6
+ * months of consecutive full-time work for TEER 0-3 (3 months for recent
+ * Ontario graduates) or 9 months of cumulative full-time work for TEER 4-5.
+ * Applicants applying from within Canada must hold valid legal status. See
+ * `eligibility()`.
  */
 
 export type TeerCategory = 0 | 1 | 2 | 3 | 4 | 5
@@ -45,6 +63,12 @@ export interface OinpInput {
   /** Overall CLB/NCLC of the French test (lowest band across abilities), 0 if none. */
   frenchClb: number
   region: Region
+  /**
+   * Recent Ontario graduate (eligible Ontario institution within the last 3
+   * years). Eligibility-only: reduces the required work experience in the job
+   * offer position from 6 months to 3 months. Awards 0 EOI points.
+   */
+  recentOntarioGraduate: boolean
 }
 
 export interface OinpBreakdown {
@@ -53,6 +77,12 @@ export interface OinpBreakdown {
   language: number
   region: number
   total: number
+}
+
+export interface Eligibility {
+  eligible: boolean
+  /** Human-readable sentences describing each unmet requirement. */
+  reasons: string[]
 }
 
 export const MAX_LABOUR = 70
@@ -189,10 +219,10 @@ export function languageAbilityPoints(bestClb: number): number {
   return 0
 }
 
-/** 2 official languages requires CLB/NCLC 6+ across both tests. */
+/** Knowledge of official languages: 10 for both at CLB/NCLC 6+, 5 for one at CLB/NCLC 6+. */
 export function officialLanguagesPoints(englishClb: number, frenchClb: number): number {
   if (englishClb >= 6 && frenchClb >= 6) return 10
-  if (Math.max(englishClb, frenchClb) >= 5) return 5
+  if (englishClb >= 6 || frenchClb >= 6) return 5
   return 0
 }
 
@@ -227,5 +257,39 @@ export function oinpScore(input: OinpInput): OinpBreakdown {
 
   const region = regionPoints(input.region)
 
+  // recentOntarioGraduate is an eligibility determination only and awards 0 points.
   return { labour, education, language, region, total: labour + education + language + region }
+}
+
+/**
+ * Eligibility determination for the Ontario Workforce Priority stream.
+ *
+ * Points alone do not guarantee nomination. A candidate must also meet the
+ * stream's work experience and legal status requirements. Because the tenure
+ * bands are coarse, a band that only partially satisfies a threshold (such as
+ * '6-12' against the 9 month rule for TEER 4-5) is treated as not meeting it
+ * rather than assuming the user is in the qualifying sub-range.
+ */
+export function eligibility(input: OinpInput): Eligibility {
+  const reasons: string[] = []
+
+  if (input.teer >= 4) {
+    if (input.tenureInPosition === 'less-6' || input.tenureInPosition === '6-12') {
+      reasons.push(
+        'TEER 4 and 5 job offers require at least 9 months of cumulative full-time work experience in the job offer position, gained within 2 years before you apply.',
+      )
+    }
+  } else if (!input.recentOntarioGraduate && input.tenureInPosition === 'less-6') {
+    reasons.push(
+      'TEER 0 to 3 job offers require at least 6 months of consecutive full-time work experience in the job offer position, gained within 12 months before you apply.',
+    )
+  }
+
+  if (input.legalStatus === 'none') {
+    reasons.push(
+      'You must have valid legal status in Canada, such as a valid work permit or study permit, at the time you apply.',
+    )
+  }
+
+  return { eligible: reasons.length === 0, reasons }
 }

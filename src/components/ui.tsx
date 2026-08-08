@@ -4,6 +4,21 @@ export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ')
 }
 
+export function HelpLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`${label}: official documentation`}
+      title="Official documentation"
+      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-[10px] font-semibold leading-none text-muted transition-colors hover:border-accent hover:text-accent"
+    >
+      ?
+    </a>
+  )
+}
+
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
@@ -14,21 +29,25 @@ export function Card({ children, className }: { children: ReactNode; className?:
   )
 }
 
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({ title, children, help }: { title: string; children: ReactNode; help?: string }) {
   return (
     <Card>
-      <h2 className="border-b border-line px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted sm:px-6">
+      <h2 className="flex items-center gap-1.5 border-b border-line px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted sm:px-6">
         {title}
+        {help && <HelpLink href={help} label={title} />}
       </h2>
       <div className="space-y-5 p-4 sm:p-6">{children}</div>
     </Card>
   )
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, children, help }: { label: string; children: ReactNode; help?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">{label}</span>
+      <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+        {label}
+        {help && <HelpLink href={help} label={label} />}
+      </span>
       {children}
     </div>
   )
@@ -87,7 +106,7 @@ export function Segmented<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="grid w-full auto-cols-fr grid-flow-col gap-1 rounded-lg border border-line bg-panel p-1"
+      className="inline-grid auto-cols-fr grid-flow-col gap-1 rounded-lg border border-line bg-panel p-1"
     >
       {options.map((o) => {
         const active = value === o.value
@@ -120,6 +139,7 @@ export function NumberInput({
   max,
   step,
   suffix,
+  help,
 }: {
   label: string
   value: string
@@ -128,10 +148,14 @@ export function NumberInput({
   max?: number
   step?: number
   suffix?: string
+  help?: string
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">{label}</span>
+      <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+        {label}
+        {help && <HelpLink href={help} label={label} />}
+      </span>
       <div className="relative">
         <input
           type="number"
@@ -163,6 +187,7 @@ export function Slider({
   min,
   max,
   format,
+  help,
 }: {
   label: string
   value: number
@@ -170,12 +195,16 @@ export function Slider({
   min: number
   max: number
   format?: (value: number) => string
+  help?: string
 }) {
   const pct = max === min ? 0 : ((value - min) / (max - min)) * 100
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">{label}</span>
+        <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+          {label}
+          {help && <HelpLink href={help} label={label} />}
+        </span>
         <span className="font-mono text-2xl font-medium tabular-nums text-ink">
           {format ? format(value) : String(value)}
         </span>
@@ -201,10 +230,12 @@ export function CheckRow({
   label,
   checked,
   onChange,
+  help,
 }: {
   label: string
   checked: boolean
   onChange: (checked: boolean) => void
+  help?: string
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-2.5">
@@ -215,6 +246,7 @@ export function CheckRow({
         className="h-4 w-4 cursor-pointer rounded accent-[var(--color-accent)]"
       />
       <span className="text-sm text-ink">{label}</span>
+      {help && <HelpLink href={help} label={label} />}
     </label>
   )
 }

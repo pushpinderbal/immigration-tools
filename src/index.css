@@ -8,8 +8,10 @@
   --color-ink: #0f172a;
   --color-muted: #475569;
   --color-line: #e2e8f0;
-  --color-accent: #2563eb;
-  --color-accent-soft: #eff6ff;
+  --color-accent: #003478;
+  --color-accent-soft: #e7ecf4;
+  --color-warn: #b45309;
+  --color-warn-soft: #fdf0e2;
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -36,7 +38,103 @@ body {
   color: #fff;
 }
 
-/* Range slider — Stripe-style thin track, blurred thumb */
+/* View Transitions: morph the landing tile into the compact tool bar */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.25s;
+}
+::view-transition-old(tile-crs),
+::view-transition-new(tile-crs),
+::view-transition-old(tile-oinp),
+::view-transition-new(tile-oinp) {
+  animation-duration: 0.3s;
+  animation-timing-function: ease-out;
+}
+
+/* Live indicator: pulsing dot for the draws feed */
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 0 rgb(0 52 120 / 0.45);
+  animation: live-pulse 2s ease-out infinite;
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(0 52 120 / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgb(0 52 120 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(0 52 120 / 0);
+  }
+}
+
+/* Hide the sidebar's scrollbar while keeping it scrollable */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Score pot: water dripping in (rising score) or leaking out (falling score) */
+.drip-in {
+  animation: drip-in 1s ease-in infinite;
+}
+.drip-out {
+  animation: drip-out 1s ease-in infinite;
+}
+@keyframes drip-in {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+}
+@keyframes drip-out {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(26px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+    transition: none !important;
+  }
+  .live-dot {
+    animation: none;
+  }
+  .drip-in,
+  .drip-out {
+    animation: none;
+  }
+}
+
+/* Range slider: Stripe-style thin track, blurred thumb */
 .slider {
   -webkit-appearance: none;
   appearance: none;
@@ -59,7 +157,7 @@ body {
   transition: box-shadow 0.15s ease;
 }
 .slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 1px 3px rgb(15 23 42 / 0.2), 0 0 0 6px rgb(37 99 235 / 0.15);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.2), 0 0 0 6px rgb(0 52 120 / 0.15);
 }
 .slider::-moz-range-thumb {
   width: 14px;

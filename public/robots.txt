@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tools.s1ngh.ca/sitemap.xml
+Sitemap: https://immicalc.org/sitemap.xml

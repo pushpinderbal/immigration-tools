@@ -3,7 +3,7 @@ import { convertTestToClb, emptyScores } from '../lib/crs/languages'
 import type { LanguageTestId, LanguageTestState } from '../lib/crs/languages'
 import { ABILITIES } from '../lib/crs/tables'
 import type { LanguageAbility } from '../lib/crs/types'
-import { Select } from './ui'
+import { HelpLink, Select } from './ui'
 
 const TEST_LABELS: Record<Exclude<LanguageTestId, 'none'>, string> = {
   ielts: 'IELTS General',
@@ -14,7 +14,7 @@ const TEST_LABELS: Record<Exclude<LanguageTestId, 'none'>, string> = {
 }
 
 const IELTS_OPTIONS = [
-  { value: '0.0', label: '—' },
+  { value: '0.0', label: '-' },
   ...Array.from({ length: 17 }, (_, i) => {
     const v = 1 + i * 0.5
     return { value: v.toFixed(1), label: v.toFixed(1) }
@@ -22,7 +22,7 @@ const IELTS_OPTIONS = [
 ]
 
 const CELPIP_OPTIONS = [
-  { value: '0', label: '—' },
+  { value: '0', label: '-' },
   ...Array.from({ length: 10 }, (_, i) => {
     const v = 3 + i
     return { value: String(v), label: String(v) }
@@ -82,11 +82,13 @@ export function LanguageTestInputs({
   allowedTests,
   value,
   onChange,
+  help,
 }: {
   title: string
   allowedTests: readonly Exclude<LanguageTestId, 'none'>[]
   value: LanguageTestState
   onChange: (next: LanguageTestState) => void
+  help?: string
 }) {
   const clb = useMemo(() => convertTestToClb(value.test, value.scores), [value])
   const scale = value.test === 'tef' || value.test === 'tcf' ? 'NCLC' : 'CLB'
@@ -94,7 +96,10 @@ export function LanguageTestInputs({
   return (
     <div className="rounded-xl border border-line p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold text-ink">{title}</h3>
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+          {title}
+          {help && <HelpLink href={help} label={title} />}
+        </h3>
         <div className="w-48">
           <Select
             ariaLabel={`${title} test`}
@@ -131,7 +136,7 @@ export function LanguageTestInputs({
                   onChange={(n) => onChange({ ...value, scores: { ...value.scores, [a]: n } })}
                 />
                 <span className="font-mono text-[10px] text-accent">
-                  {scale} {clb[a] === 0 ? '—' : clb[a]}
+                  {scale} {clb[a] === 0 ? '-' : clb[a]}
                 </span>
               </div>
             ))}
