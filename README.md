@@ -1,12 +1,13 @@
 # ImmiCalc
 
-Canadian immigration points calculator web-app. Runs client-side.
+Calculate your Express Entry and PNP scores in the browser.
 
 ## Features
 
-- Runs entirely in the browser. No account, no server, nothing stored or tracked.
-- Live Express Entry draws feed, pulled from IRCC's published data.
-- Score-improvement tips on the CRS page, computed from your actual inputs.
+- Fully client-side: everything runs in your browser, no account or server needed.
+- Live Draw Feed: Express Entry draw results pulled straight from IRCC's published data.
+- No trackers or data collection: nothing is stored or tracked.
+- Federal and provincial calculators: CRS plus OINP, BC PNP, SINP, AAIP and MPNP.
 
 ## Getting started
 

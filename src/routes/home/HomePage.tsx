@@ -10,7 +10,7 @@ export function HomePage() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-12 pb-16 sm:px-6">
       <Seo
         title="Immigration Tools | ImmiCalc"
-        description="Quick, straightforward Canadian immigration point calculators for Express Entry CRS and the provincial programs. Answer a few simple questions and get an instant estimate - no sign-up."
+        description="Calculate your Canadian immigration points for Express Entry CRS and the provincial programs (OINP, BC PNP, SINP, AAIP, MPNP). Answer a few simple questions and get an instant estimate."
         path="/"
       />
       <div className="mx-auto max-w-2xl text-center">

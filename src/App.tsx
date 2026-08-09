@@ -35,7 +35,7 @@ export function App() {
             Results are estimates. Confirm anything important against the official IRCC or provincial pages.
           </p>
           <p className="text-xs text-muted">
-            Not affiliated with IRCC, Canada.ca, or any organization. Non-profit.
+            Not affiliated with IRCC, Canada.ca, or any organization.
           </p>
         </div>
       </footer>
