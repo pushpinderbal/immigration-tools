@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import canada from '@svg-maps/canada'
 import { cn } from './ui'
@@ -9,22 +8,6 @@ const PROVINCE_ROUTES: Record<string, { to: string }> = {
   sk: { to: '/saskatchewan' },
   mb: { to: '/manitoba' },
   on: { to: '/oinp' },
-}
-
-const PROVINCE_CODES: Record<string, string> = {
-  ab: 'AB',
-  bc: 'BC',
-  mb: 'MB',
-  nb: 'NB',
-  nl: 'NL',
-  ns: 'NS',
-  nt: 'NT',
-  nu: 'NU',
-  on: 'ON',
-  pe: 'PE',
-  qc: 'QC',
-  sk: 'SK',
-  yt: 'YT',
 }
 
 /**
@@ -56,9 +39,14 @@ function labelPosition(d: string): { x: number; y: number } {
   return { x: Math.round(cx / (3 * twiceArea)), y: Math.round(cy / (3 * twiceArea)) }
 }
 
-export function CanadaMap() {
+export function CanadaMap({
+  hovered,
+  onHover: setHovered,
+}: {
+  hovered: string | null
+  onHover: (id: string | null) => void
+}) {
   const navigate = useNavigate()
-  const [hovered, setHovered] = useState<string | null>(null)
 
   const go = (to: string) => navigate(to, { viewTransition: true })
 
@@ -68,12 +56,12 @@ export function CanadaMap() {
     <section className="map-card" aria-labelledby="map-title">
       <div className="map-card-header">
         <div>
-          <p className="section-kicker">PROVINCIAL INDEX / 05 LIVE ROUTES</p>
-          <h2 id="map-title" className="map-card-title mt-2">Choose a province</h2>
+          <p className="section-kicker">Explore Canada</p>
+          <h2 id="map-title" className="map-card-title mt-2">
+            Where do you see yourself?
+          </h2>
+          <p className="map-description">Select a highlighted province to estimate your points.</p>
         </div>
-        <p className="coordinate-label" aria-live="polite">
-          {hoveredName ? `${hoveredName} / OPEN ROUTE` : 'HOVER OR FOCUS'}
-        </p>
       </div>
 
       <div className="map-stage">
@@ -93,8 +81,9 @@ export function CanadaMap() {
                   className={cn(
                     'transition-colors',
                     entry
-                      ? 'cursor-pointer fill-accent-soft stroke-accent/70 hover:fill-accent hover:stroke-accent hover:brightness-95'
+                      ? 'map-province cursor-pointer fill-accent-soft stroke-accent/70'
                       : 'fill-mineral/80 stroke-line',
+                    entry && hovered === loc.id && 'is-highlighted',
                   )}
                   strokeWidth="1.5"
                   strokeLinejoin="round"
@@ -113,26 +102,35 @@ export function CanadaMap() {
                       : undefined
                   }
                   onMouseEnter={() => setHovered(loc.id)}
-                  onMouseLeave={() => setHovered((h) => (h === loc.id ? null : h))}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => setHovered(loc.id)}
+                  onBlur={() => setHovered(null)}
                 >
                   <title>{loc.name}</title>
                 </path>
-                <text
-                  x={pos.x}
-                  y={pos.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  className={cn('pointer-events-none select-none font-semibold', entry ? 'fill-ink' : 'fill-muted/70')}
-                  style={{ fontSize: 20 }}
-                >
-                  {PROVINCE_CODES[loc.id]}
-                </text>
+                {entry && (
+                  <image
+                    href={`/flags/${loc.id}.png`}
+                    x={pos.x - 27}
+                    y={pos.y - 16}
+                    width="54"
+                    height="32"
+                    preserveAspectRatio="xMidYMid meet"
+                    className="map-flag pointer-events-none"
+                    aria-hidden="true"
+                  />
+                )}
               </g>
             )
           })}
         </svg>
       </div>
 
+      <p className="map-selection" aria-live="polite">
+        {hoveredName
+          ? `${hoveredName} · ${PROVINCE_ROUTES[hovered ?? ''] ? 'Open calculator ↗' : 'No calculator available yet'}`
+          : 'Five provinces. A place to start.'}
+      </p>
       <div className="map-legend" aria-label="Map legend">
         <span className="map-legend-item">
           <span className="map-legend-swatch" aria-hidden="true" />
@@ -140,7 +138,7 @@ export function CanadaMap() {
         </span>
         <span className="map-legend-item">
           <span className="map-legend-swatch is-muted" aria-hidden="true" />
-          Route not yet indexed
+          Not available yet
         </span>
       </div>
     </section>

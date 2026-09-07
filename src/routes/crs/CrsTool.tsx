@@ -6,7 +6,7 @@ import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { DrawFeed } from '../../components/DrawFeed'
-import { CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
+import { FormSections, CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
 import { convertTestToClb, emptyScores } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import { crsScore } from '../../lib/crs/score'
@@ -176,7 +176,7 @@ export function CrsTool() {
       />
       <ToolTiles current="crs" />
       <div className="tool-header">
-        <p className="tool-kicker">01 / FEDERAL ROUTE</p>
+        <p className="tool-kicker">Federal · Express Entry</p>
         <h1 className="tool-title mt-3">CRS Calculator</h1>
         <p className="tool-description">
           Express Entry ranks every candidate out of 1200. Enter your details and see your score, with a breakdown of
@@ -185,7 +185,7 @@ export function CrsTool() {
       </div>
 
       <div className="tool-workspace">
-        <div className="space-y-5">
+        <FormSections>
           <Section title="Profile" help={IRCC_GRID}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Slider
@@ -352,7 +352,7 @@ export function CrsTool() {
           </Section>
 
           <Recommendations input={input} currentTotal={score.total} />
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated CRS score"

@@ -30,6 +30,17 @@ function fillStandardProfile() {
 }
 
 describe('AlbertaTool', () => {
+  it('waits for an answer before showing eligibility', () => {
+    renderAlberta()
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('You appear eligible')).toBeNull()
+    const education = screen.getByLabelText('Highest level of education')
+    fireEvent.focus(education)
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    fireEvent.change(education, { target: { value: 'bachelor' } })
+    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+  })
+
   it('starts blank with a near-zero score', () => {
     renderAlberta()
     // experience 3 (less-6 fallback) + age 3 (18, slider minimum) = 6

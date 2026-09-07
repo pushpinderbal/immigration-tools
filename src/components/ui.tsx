@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { Children, isValidElement, type ReactNode } from 'react'
 
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ')
@@ -27,13 +27,36 @@ export function Card({ children, className }: { children: ReactNode; className?:
 
 export function Section({ title, children, help }: { title: string; children: ReactNode; help?: string }) {
   return (
-    <Card>
+    <section className="field-card form-section" id={sectionId(title)} tabIndex={-1} aria-label={title}>
       <h2 className="section-heading">
         {title}
         {help && <HelpLink href={help} label={title} />}
       </h2>
       <div className="section-body space-y-5">{children}</div>
-    </Card>
+    </section>
+  )
+}
+
+function sectionId(title: string) {
+  return `section-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+}
+
+export function FormSections({ children }: { children: ReactNode }) {
+  const sections = Children.toArray(children).filter(
+    (child) => isValidElement<{ title: string }>(child) && child.type === Section,
+  )
+  return (
+    <div className="space-y-5 min-w-0">
+      <nav className="section-shortcuts" aria-label="Form sections">
+        <span>Jump to</span>
+        {sections.map((child) => {
+          if (!isValidElement<{ title: string }>(child)) return null
+          const { title } = child.props
+          return <a key={title} href={`#${sectionId(title)}`}>{title}</a>
+        })}
+      </nav>
+      {children}
+    </div>
   )
 }
 

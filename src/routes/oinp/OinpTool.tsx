@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
+import { FormSections, CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -144,6 +144,7 @@ const DEFAULT_UI: OinpUiState = {
 
 export function OinpTool() {
   const [ui, setUi] = useState<OinpUiState>(DEFAULT_UI)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const { score, eligibilityResult } = useMemo(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
@@ -166,7 +167,10 @@ export function OinpTool() {
     return { score: oinpScore(input), eligibilityResult: eligibility(input) }
   }, [ui])
 
-  const patch = (p: Partial<OinpUiState>) => setUi((prev) => ({ ...prev, ...p }))
+  const patch = (p: Partial<OinpUiState>) => {
+    setHasStarted(true)
+    setUi((prev) => ({ ...prev, ...p }))
+  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -177,7 +181,7 @@ export function OinpTool() {
       />
       <ToolTiles current="oinp" />
       <div className="tool-header">
-        <p className="tool-kicker">02 / ONTARIO ROUTE</p>
+        <p className="tool-kicker">Ontario · Provincial program</p>
         <h1 className="tool-title mt-3">OINP Points Calculator</h1>
         <p className="tool-description">
           Ontario's Workforce Priority stream ranks job-offer candidates out of 130. Enter your details to see your
@@ -185,12 +189,14 @@ export function OinpTool() {
         </p>
       </div>
 
-      <div className="mt-4">
-        <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
-      </div>
+      {hasStarted && (
+        <div className="mt-4">
+          <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+        </div>
+      )}
 
       <div className="tool-workspace">
-        <div className="space-y-5">
+        <FormSections>
           <Section title="Employment / labour market" help={OINP_DOC}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="NOC TEER category" help={OINP_DOC}>
@@ -323,7 +329,7 @@ export function OinpTool() {
               />
             </Field>
           </Section>
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated OINP EOI score"

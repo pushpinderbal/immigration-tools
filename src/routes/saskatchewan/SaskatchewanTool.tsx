@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
+import { FormSections, CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -105,12 +105,16 @@ function buildInput(ui: SinpUiState): SinpInput {
 
 export function SaskatchewanTool() {
   const [ui, setUi] = useState<SinpUiState>(DEFAULT_UI)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const input = useMemo(() => buildInput(ui), [ui])
   const score = useMemo(() => sinpScore(input), [input])
   const eligibilityResult: Eligibility = useMemo(() => eligibility(input), [input])
 
-  const patch = (p: Partial<SinpUiState>) => setUi((prev) => ({ ...prev, ...p }))
+  const patch = (p: Partial<SinpUiState>) => {
+    setHasStarted(true)
+    setUi((prev) => ({ ...prev, ...p }))
+  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -121,7 +125,7 @@ export function SaskatchewanTool() {
       />
       <ToolTiles current="saskatchewan" />
       <div className="tool-header">
-        <p className="tool-kicker">04 / SASKATCHEWAN ROUTE</p>
+        <p className="tool-kicker">Saskatchewan · Provincial program</p>
         <h1 className="tool-title mt-3">SINP Points Calculator</h1>
         <p className="tool-description">
           Saskatchewan scores International Skilled Worker candidates out of 110. Enter your details to see your
@@ -129,12 +133,14 @@ export function SaskatchewanTool() {
         </p>
       </div>
 
-      <div className="mt-4">
-        <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
-      </div>
+      {hasStarted && (
+        <div className="mt-4">
+          <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+        </div>
+      )}
 
       <div className="tool-workspace">
-        <div className="space-y-5">
+        <FormSections>
           <Section title="Labour market success" help={SASK_DOC}>
             <Field label="Highest level of education or training" help={SASK_DOC}>
               <Select
@@ -246,7 +252,7 @@ export function SaskatchewanTool() {
             )}
             <Note>You need at least 60 points to enter the SINP EOI pool.</Note>
           </Section>
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated SINP EOI score"

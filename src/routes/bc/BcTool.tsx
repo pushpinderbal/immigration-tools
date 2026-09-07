@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
+import { FormSections, CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -99,6 +99,7 @@ const DEFAULT_UI: BcUiState = {
 
 export function BcTool() {
   const [ui, setUi] = useState<BcUiState>(DEFAULT_UI)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const { score, eligibilityResult } = useMemo(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
@@ -120,7 +121,10 @@ export function BcTool() {
     return { score: bcScore(input), eligibilityResult: eligibility(input) }
   }, [ui])
 
-  const patch = (p: Partial<BcUiState>) => setUi((prev) => ({ ...prev, ...p }))
+  const patch = (p: Partial<BcUiState>) => {
+    setHasStarted(true)
+    setUi((prev) => ({ ...prev, ...p }))
+  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -131,7 +135,7 @@ export function BcTool() {
       />
       <ToolTiles current="bc" />
       <div className="tool-header">
-        <p className="tool-kicker">03 / BRITISH COLUMBIA ROUTE</p>
+        <p className="tool-kicker">British Columbia · Provincial program</p>
         <h1 className="tool-title mt-3">BC PNP Points Calculator</h1>
         <p className="tool-description">
           BC scores Skills Immigration and Express Entry BC candidates out of 200. Enter your details to see your
@@ -139,12 +143,14 @@ export function BcTool() {
         </p>
       </div>
 
-      <div className="mt-6">
-        <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
-      </div>
+      {hasStarted && (
+        <div className="mt-6">
+          <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+        </div>
+      )}
 
       <div className="tool-workspace">
-        <div className="space-y-5">
+        <FormSections>
           <Section title="Work experience" help={BC_DOC}>
             <Field label="Directly related work experience" help={BC_DOC}>
               <Select
@@ -257,7 +263,7 @@ export function BcTool() {
             )}
             <Note>Wage points rise one point per dollar above $15 per hour, capped at 55.</Note>
           </Section>
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated BC PNP EOI score"

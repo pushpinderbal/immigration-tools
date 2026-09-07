@@ -1,10 +1,23 @@
-import { Link, Outlet } from 'react-router-dom'
+import { useLayoutEffect, useRef } from 'react'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { MapleLeaf } from './components/MapleLeaf'
-import { AiChat } from './components/AiChat'
 
 export function App() {
+  const { pathname } = useLocation()
+  const previousPath = useRef(pathname)
+  const mainRef = useRef<HTMLElement>(null)
+
+  useLayoutEffect(() => {
+    if (previousPath.current !== pathname) {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      mainRef.current?.focus({ preventScroll: true })
+      previousPath.current = pathname
+    }
+  }, [pathname])
+
   return (
     <div className="flex min-h-screen flex-col">
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
         <div className="site-header-inner mx-auto flex w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="brand-lockup" aria-label="ImmiCalc home">
@@ -13,11 +26,10 @@ export function App() {
             </span>
             <span>
               <span className="brand-wordmark block">ImmiCalc</span>
-              <span className="brand-caption block">Canadian immigration field atlas</span>
+              <span className="brand-caption block">Canadian immigration calculators</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <span className="header-index hidden sm:inline">06 / calculators</span>
             <a
               href="https://github.com/pushpinderbal/immigration-tools"
               target="_blank"
@@ -33,25 +45,18 @@ export function App() {
         </div>
       </header>
 
-      <main id="main-content" className="flex-1">
+      <main ref={mainRef} id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         <Outlet />
       </main>
 
       <footer className="site-footer">
-        <div className="site-footer-inner mx-auto flex w-full max-w-6xl flex-col justify-center gap-2 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div>
-            <p className="footer-meta">Open field notes / client-side only</p>
-            <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted">
-              Results are estimates. Confirm important details with IRCC or the relevant provincial program.
-            </p>
-          </div>
-          <p className="max-w-xs text-xs leading-relaxed text-muted sm:text-right">
-            Nothing is stored or tracked. ImmiCalc is independent and not affiliated with IRCC or Canada.ca.
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+          <p className="text-xs leading-relaxed text-muted">
+            ImmiCalc is independent of IRCC. Verify your estimate with the relevant government program.
           </p>
         </div>
       </footer>
 
-      <AiChat />
     </div>
   )
 }

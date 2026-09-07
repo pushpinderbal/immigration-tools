@@ -35,22 +35,20 @@ const SAMPLE_ROUNDS: Array<Record<string, unknown>> = [
 
 describe('DrawFeed', () => {
   it('renders the latest draws from the IRCC feed', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(ROUNDS_JSON(SAMPLE_ROUNDS), { status: 200 })),
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(ROUNDS_JSON(SAMPLE_ROUNDS), { status: 200 })))
     render(<DrawFeed />)
     expect(await screen.findByText('August 7, 2026')).toBeTruthy()
     expect(screen.getByText('#434')).toBeTruthy()
     expect(screen.getByText('470')).toBeTruthy()
     expect(screen.getByText('July 24, 2026')).toBeTruthy()
+    expect(screen.getByText('Transport Occupations')).toBeTruthy()
+    expect(
+      screen.getByText('Federal Skilled Worker Program, Canadian Experience Class and Federal Skilled Trades Program'),
+    ).toBeTruthy()
   })
 
   it('links each draw number to its ministerial instruction', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(ROUNDS_JSON(SAMPLE_ROUNDS), { status: 200 })),
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(ROUNDS_JSON(SAMPLE_ROUNDS), { status: 200 })))
     render(<DrawFeed />)
     await screen.findByText('#434')
     const link = screen.getByRole('link', { name: /#434/ })

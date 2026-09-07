@@ -1,103 +1,100 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Seo } from '../../components/Seo'
 
 const CanadaMap = lazy(() => import('../../components/CanadaMap').then((m) => ({ default: m.CanadaMap })))
 
 export function HomePage() {
+  const [hoveredProvince, setHoveredProvince] = useState<string | null>(null)
   return (
     <div className="home-page mx-auto w-full max-w-6xl px-4 sm:px-6">
       <Seo
         title="Immigration Tools | ImmiCalc"
-        description="Calculate your Canadian immigration points for Express Entry CRS and the provincial programs (OINP, BC PNP, SINP, AAIP, MPNP). Answer a few simple questions and get an instant estimate."
+        description="Estimate your Canadian immigration points for Express Entry CRS and five provincial programs. Free, private calculators with instant results."
         path="/"
       />
-
       <section className="home-hero" aria-labelledby="home-title">
-        <div>
-          <p className="home-eyebrow">IMMICALC / CANADIAN IMMIGRATION FIELD ATLAS</p>
-          <h1 id="home-title" className="home-title">Immigration Tools</h1>
-          <p className="home-lede">
-            A clear field guide to the points that shape your next move. Choose a route, answer a few questions, and
-            get an instant estimate in your browser.
-          </p>
+        <h1 id="home-title" className="home-title">
+          Your PR Journey.
+          <br />
+          <span>Start with your score.</span>
+        </h1>
+        <p className="home-lede">
+          Estimate your immigration points for Express Entry or a provincial program. Choose a calculator below to see
+          where you stand.
+        </p>
+        <div className="home-assurances" aria-label="Calculator benefits">
+          <span>Free to use</span>
+          <span>No sign-up</span>
+          <span>No personal information collected</span>
         </div>
-        <aside className="home-hero-note" aria-label="Calculator field note">
-          <p className="section-kicker">FIELD NOTE / 0001</p>
-          <p className="home-note-value">06 live calculators</p>
-          <p className="home-note-copy">
-            Federal CRS plus five provincial programs. Your entries stay on this device.
-          </p>
-        </aside>
       </section>
 
       <div className="home-grid">
-        <Suspense
-          fallback={
-            <div className="map-card flex h-[min(64vh,520px)] items-center justify-center text-sm text-muted">
-              Loading field map...
-            </div>
-          }
-        >
-          <CanadaMap />
+        <Suspense fallback={<div className="map-card map-loading">Loading map of Canada...</div>}>
+          <CanadaMap hovered={hoveredProvince} onHover={setHoveredProvince} />
         </Suspense>
-
-        <section className="routes-card" aria-labelledby="routes-title">
-          <div className="routes-card-header">
-            <div>
-              <p className="section-kicker">ROUTE REGISTER / 06</p>
-              <h2 id="routes-title" className="routes-card-title mt-2">Choose your route</h2>
-            </div>
-            <span className="coordinate-label">CAN / 2026<br />POINTS EDITION</span>
-          </div>
-
-          <Link
-            to="/crs"
-            viewTransition
-            style={{ viewTransitionName: 'tile-crs' }}
-            className="route-primary"
-          >
-            <span className="route-index">01 / FEDERAL</span>
-            <span className="route-name block">Express Entry (CRS)</span>
-            <span className="route-detail block">Comprehensive Ranking System estimate for the federal pool.</span>
-            <span className="route-arrow" aria-hidden="true">↗</span>
+        <div className="home-options">
+          <Link to="/crs" viewTransition style={{ viewTransitionName: 'tile-crs' }} className="route-primary">
+            <span className="route-tag">Federal calculator</span>
+            <h2 className="route-primary-title">Express Entry (CRS)</h2>
+            <p className="route-primary-description">
+              Estimate your ranking in the federal pool and see where you could gain points.
+            </p>
+            <span className="route-cta">
+              Calculate my CRS score <span aria-hidden="true">↗</span>
+            </span>
           </Link>
 
-          <div className="routes-list-heading">
-            <h3 className="section-kicker">Provincial programs</h3>
-            <span className="coordinate-label">05 FIELD ROUTES</span>
-          </div>
-
-          <ol className="routes-list">
-            {[
-              { to: '/oinp', name: 'OINP Points Calculator', detail: 'Ontario / employer job offer' },
-              { to: '/bc', name: 'BC PNP Points Calculator', detail: 'British Columbia / skills' },
-              { to: '/saskatchewan', name: 'SINP Calculator', detail: 'Saskatchewan / EOI' },
-              { to: '/alberta', name: 'AAIP Calculator', detail: 'Alberta / worker streams' },
-              { to: '/manitoba', name: 'MPNP Calculator', detail: 'Manitoba / EOI' },
-            ].map((route, index) => (
-              <li key={route.to}>
-                <Link to={route.to} viewTransition className="route-list-link">
-                  <span className="route-index" aria-hidden="true">{String(index + 2).padStart(2, '0')}</span>
-                  <span>
-                    <span className="route-name block">{route.name}</span>
-                    <span className="route-detail block">{route.detail}</span>
-                  </span>
-                  <span className="font-mono text-sm text-muted" aria-hidden="true">↗</span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-
-          <p className="privacy-note">
-            <span className="privacy-note-mark" aria-hidden="true" />
-            <span>
-              Private by design. Scores are calculated locally and nothing is stored or tracked. Always verify a
-              result against the official program page.
-            </span>
-          </p>
-        </section>
+          <section className="routes-card" aria-labelledby="routes-title">
+            <div className="routes-card-header">
+              <h2 id="routes-title" className="routes-card-title">
+                Provincial calculators
+              </h2>
+              <p>Have a province in mind? Start here.</p>
+            </div>
+            <ul className="routes-list">
+              {[
+                { to: '/oinp', name: 'Ontario', detail: 'OINP', code: 'ON' },
+                { to: '/bc', name: 'British Columbia', detail: 'BC PNP', code: 'BC' },
+                { to: '/saskatchewan', name: 'Saskatchewan', detail: 'SINP', code: 'SK' },
+                { to: '/alberta', name: 'Alberta', detail: 'AAIP', code: 'AB' },
+                { to: '/manitoba', name: 'Manitoba', detail: 'MPNP', code: 'MB' },
+              ].map((route) => (
+                <li key={route.to}>
+                  <Link
+                    to={route.to}
+                    viewTransition
+                    className={`route-list-link${hoveredProvince === route.code.toLowerCase() ? ' is-highlighted' : ''}`}
+                    onMouseEnter={() => setHoveredProvince(route.code.toLowerCase())}
+                    onMouseLeave={() => setHoveredProvince(null)}
+                    onFocus={() => setHoveredProvince(route.code.toLowerCase())}
+                    onBlur={() => setHoveredProvince(null)}
+                  >
+                    <img
+                      className="province-flag"
+                      src={`/flags/${route.code.toLowerCase()}.png`}
+                      alt=""
+                      width="36"
+                      height="24"
+                    />
+                    <span className="route-name">
+                      {route.name} <span className="route-detail">{route.detail}</span>
+                    </span>
+                    <span className="route-list-arrow" aria-hidden="true">
+                      ↗
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
       </div>
+      <p className="home-guidance">
+        Each calculator uses its own program’s scoring system. Scores from different programs are not directly
+        comparable.
+      </p>
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { CheckRow, Field, Note, Section, Select, Slider } from '../../components/ui'
+import { FormSections, CheckRow, Field, Note, Section, Select, Slider } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -87,6 +87,7 @@ const DEFAULT_UI: ManitobaUiState = {
 
 export function ManitobaTool() {
   const [ui, setUi] = useState<ManitobaUiState>(DEFAULT_UI)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const input = useMemo<ManitobaInput>(() => {
     const englishClbs = convertTestToClb(ui.english.test, ui.english.scores)
@@ -121,7 +122,10 @@ export function ManitobaTool() {
 
   const eligibilityResult = useMemo(() => eligibility(input), [input])
 
-  const patch = (p: Partial<ManitobaUiState>) => setUi((prev) => ({ ...prev, ...p }))
+  const patch = (p: Partial<ManitobaUiState>) => {
+    setHasStarted(true)
+    setUi((prev) => ({ ...prev, ...p }))
+  }
 
   const addSecondLanguage = () => {
     patch({ secondLanguage: { test: 'tef', scores: emptyScores() } })
@@ -136,7 +140,7 @@ export function ManitobaTool() {
       />
       <ToolTiles current="manitoba" />
       <div className="tool-header">
-        <p className="tool-kicker">06 / MANITOBA ROUTE</p>
+        <p className="tool-kicker">Manitoba · Provincial program</p>
         <h1 className="tool-title mt-3">Manitoba MPNP Points Calculator</h1>
         <p className="tool-description">
           Manitoba ranks Skilled Worker candidates in its Expression of Interest pool out of 1000. Enter your details
@@ -144,12 +148,14 @@ export function ManitobaTool() {
         </p>
       </div>
 
-      <div className="mt-6">
-        <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
-      </div>
+      {hasStarted && (
+        <div className="mt-6">
+          <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+        </div>
+      )}
 
       <div className="tool-workspace">
-        <div className="space-y-5">
+        <FormSections>
           <Section title="Language" help={MB_LANGUAGE_DOC}>
             <LanguageTestInputs
               title="English (first official language)"
@@ -311,7 +317,7 @@ export function ManitobaTool() {
             These points rank you in the MPNP pool. Entering the pool also requires a separate minimum score of 60
             out of 100 on Manitoba's eligibility grid, which this calculator does not compute.
           </Note>
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated MPNP EOI score"

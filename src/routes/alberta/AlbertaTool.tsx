@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
+import { FormSections, CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -114,6 +114,7 @@ const DEFAULT_UI: AlbertaUiState = {
 
 export function AlbertaTool() {
   const [ui, setUi] = useState<AlbertaUiState>(DEFAULT_UI)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const input = useMemo<AlbertaInput>(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
@@ -139,7 +140,10 @@ export function AlbertaTool() {
 
   const eligibilityResult = useMemo(() => eligibility(input), [input])
 
-  const patch = (p: Partial<AlbertaUiState>) => setUi((prev) => ({ ...prev, ...p }))
+  const patch = (p: Partial<AlbertaUiState>) => {
+    setHasStarted(true)
+    setUi((prev) => ({ ...prev, ...p }))
+  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -150,7 +154,7 @@ export function AlbertaTool() {
       />
       <ToolTiles current="alberta" />
       <div className="tool-header">
-        <p className="tool-kicker">05 / ALBERTA ROUTE</p>
+        <p className="tool-kicker">Alberta · Provincial program</p>
         <h1 className="tool-title mt-3">Alberta AAIP Points Calculator</h1>
         <p className="tool-description">
           Alberta ranks Worker Expression of Interest candidates out of 100. Enter your details to see your points
@@ -158,12 +162,14 @@ export function AlbertaTool() {
         </p>
       </div>
 
-      <div className="mt-6">
-        <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
-      </div>
+      {hasStarted && (
+        <div className="mt-6">
+          <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+        </div>
+      )}
 
       <div className="tool-workspace">
-        <div className="space-y-5">
+        <FormSections>
           <Section title="Human capital" help={AB_DOC}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Highest level of education" help={AB_DOC}>
@@ -283,7 +289,7 @@ export function AlbertaTool() {
               help={AB_DOC}
             />
           </Section>
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated AAIP EOI score"
