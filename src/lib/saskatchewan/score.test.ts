@@ -54,7 +54,7 @@ describe('SINP Factor I: Labour Market Success factor points (official grid)', (
     expect(priorWorkExperiencePoints(4)).toBe(4)
     expect(priorWorkExperiencePoints(3)).toBe(3)
     expect(priorWorkExperiencePoints(2)).toBe(2)
-    expect(priorWorkExperiencePoints(1)).toBe(0)
+    expect(priorWorkExperiencePoints(1)).toBe(1)
     expect(priorWorkExperiencePoints(0)).toBe(0)
   })
 

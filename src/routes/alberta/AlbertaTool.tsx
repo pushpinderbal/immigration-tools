@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
+import { FormSections, CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -114,6 +114,7 @@ const DEFAULT_UI: AlbertaUiState = {
 
 export function AlbertaTool() {
   const [ui, setUi] = useState<AlbertaUiState>(DEFAULT_UI)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const input = useMemo<AlbertaInput>(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
@@ -139,30 +140,38 @@ export function AlbertaTool() {
 
   const eligibilityResult = useMemo(() => eligibility(input), [input])
 
-  const patch = (p: Partial<AlbertaUiState>) => setUi((prev) => ({ ...prev, ...p }))
+  const patch = (p: Partial<AlbertaUiState>) => {
+    setHasStarted(true)
+    setUi((prev) => ({ ...prev, ...p }))
+  }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
+    <div className="tool-page px-4 sm:px-6">
       <Seo
         title="Alberta AAIP Points Calculator | ImmiCalc"
         description="A straightforward AAIP points check for Alberta's Worker stream - a few simple questions, instant result."
         path="/alberta"
       />
       <ToolTiles current="alberta" />
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">Alberta AAIP Points Calculator</h1>
-      <p className="mt-1.5 max-w-2xl text-sm text-muted">
-        Alberta ranks Worker Expression of Interest candidates out of 100. Enter your details to see your points and
-        how they add up.
-      </p>
-
-      <div className="mt-6">
-        <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+      <div className="tool-header">
+        <p className="tool-kicker">Alberta · Provincial program</p>
+        <h1 className="tool-title mt-3">Alberta AAIP Points Calculator</h1>
+        <p className="tool-description">
+          Alberta ranks Worker Expression of Interest candidates out of 100. Enter your details to see your points
+          and how they add up.
+        </p>
       </div>
 
-      <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5">
+      {hasStarted && (
+        <div className="mt-6">
+          <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+        </div>
+      )}
+
+      <div className="tool-workspace">
+        <FormSections>
           <Section title="Human capital" help={AB_DOC}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Highest level of education" help={AB_DOC}>
                 <Select
                   ariaLabel="Highest level of education"
@@ -181,7 +190,7 @@ export function AlbertaTool() {
               </Field>
             </div>
 
-            <div className="rounded-xl border border-line p-4">
+            <div className="language-card">
               <LanguageTestInputs
                 title="English"
                 allowedTests={ENGLISH_TESTS}
@@ -193,7 +202,7 @@ export function AlbertaTool() {
                 <button
                   type="button"
                   onClick={() => patch({ french: { test: 'tef', scores: emptyScores() } })}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+                  className="add-language flex w-full items-center justify-center gap-2 text-sm"
                 >
                   <span aria-hidden="true">+</span> Add French test
                 </button>
@@ -214,7 +223,7 @@ export function AlbertaTool() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Total work experience" help={AB_DOC}>
                 <Select
                   ariaLabel="Total work experience"
@@ -280,7 +289,7 @@ export function AlbertaTool() {
               help={AB_DOC}
             />
           </Section>
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated AAIP EOI score"

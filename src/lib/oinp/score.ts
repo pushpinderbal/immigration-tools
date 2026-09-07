@@ -1,10 +1,10 @@
 /**
  * OINP EOI scoring - Ontario Workforce Priority stream.
  *
- * Source: Ontario.ca "Ontario Workforce Priority stream" (updated 2026-08-04)
+ * Source: Ontario.ca "Ontario Workforce Priority stream" (updated 2026-08-11)
  * https://www.ontario.ca/page/ontario-workforce-priority-stream
  *
- * Revalidated 2026-08-08 against the current official grid. The Workforce
+ * Revalidated 2026-09-07 against the current official grid. The Workforce
  * Priority stream is Ontario's single active OINP stream (all eight former
  * streams closed June 26, 2026). Field of study and location of study are NOT
  * scored. The "1 official language" bilingualism points require CLB/NCLC 6 in

@@ -42,7 +42,7 @@ function AbilityInput({
   onChange: (value: number) => void
   ariaLabel: string
 }) {
-  const base = 'h-9 w-full rounded-lg border border-line bg-panel px-2 font-mono text-xs tabular-nums text-ink outline-none transition-shadow focus:border-accent focus:ring-2 focus:ring-accent/20'
+  const base = 'control h-10 w-full px-2 font-mono text-xs tabular-nums outline-none'
 
   if (test === 'ielts' || test === 'celpip') {
     const options = test === 'ielts' ? IELTS_OPTIONS : CELPIP_OPTIONS
@@ -94,7 +94,7 @@ export function LanguageTestInputs({
   const scale = value.test === 'tef' || value.test === 'tcf' ? 'NCLC' : 'CLB'
 
   return (
-    <div className="rounded-xl border border-line p-4">
+    <div className="language-card">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink">
           {title}

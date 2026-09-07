@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getCrsRecommendations } from './recommendations'
+import { crsScore } from './score'
 import type { CrsInput, LanguageProficiency } from './types'
 
 const allClb = (c: number): LanguageProficiency => ({
@@ -34,6 +35,27 @@ describe('getCrsRecommendations', () => {
     const nomination = recommendations.find((r) => r.id === 'provincial-nomination')
     expect(nomination).toBeDefined()
     expect(nomination?.potential).toBe(600)
+  })
+
+  it('simulates the nomination gain through the CRS cap', () => {
+    const input = defaultInput({
+      age: 30,
+      education: 'doctorate',
+      english: allClb(10),
+      french: allClb(9),
+      canadianWorkYears: 5,
+      foreignWorkYears: 5,
+      certificateOfQualification: true,
+      canadianEducation: 'three-plus-years',
+      siblingInCanada: true,
+    })
+    const recommendations = getCrsRecommendations(input)
+    const nomination = recommendations.find((r) => r.id === 'provincial-nomination')
+    const baseTotal = crsScore(input).total
+    const nominatedTotal = crsScore({ ...input, provincialNomination: true }).total
+
+    expect(nomination?.potential).toBe(nominatedTotal - baseTotal)
+    expect(nomination?.potential).toBeLessThan(600)
   })
 
   it('default CRS input includes a language improvement suggestion', () => {

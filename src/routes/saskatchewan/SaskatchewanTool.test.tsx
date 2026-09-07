@@ -37,6 +37,17 @@ function fillStandardProfile() {
 }
 
 describe('SaskatchewanTool', () => {
+  it('waits for an answer before showing eligibility', () => {
+    renderSask()
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('You appear eligible')).toBeNull()
+    const education = screen.getByLabelText('Highest level of education or training')
+    fireEvent.focus(education)
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    fireEvent.change(education, { target: { value: 'bachelor' } })
+    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+  })
+
   it('starts blank with a near-zero score', () => {
     renderSask()
     // education 12 (certificate, lowest band) is the only points-bearing fallback

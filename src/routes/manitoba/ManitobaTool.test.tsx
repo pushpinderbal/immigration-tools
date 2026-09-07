@@ -31,6 +31,17 @@ function fillStandardProfile() {
 }
 
 describe('ManitobaTool', () => {
+  it('waits for an answer before showing eligibility', () => {
+    renderManitoba()
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('You appear eligible')).toBeNull()
+    const education = screen.getByLabelText('Highest level of education')
+    fireEvent.focus(education)
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    fireEvent.change(education, { target: { value: 'two-year' } })
+    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+  })
+
   it('starts blank with a near-zero score', () => {
     renderManitoba()
     // age 20 (18, slider minimum) is the only points-bearing fallback

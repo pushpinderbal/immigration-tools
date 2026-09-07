@@ -9,7 +9,7 @@
  * Eligibility: AAIP worker streams each set minimum eligibility criteria. The
  * common requirements derivable from the form (a full-time Alberta job offer, a
  * minimum language score, and minimum work experience) are implemented in
- * `eligibility`. Stream eligibility pages reviewed 2026-08-08:
+ * `eligibility`. Stream eligibility pages reviewed 2026-09-07:
  * https://www.alberta.ca/aaip-alberta-opportunity-stream-eligibility
  * https://www.alberta.ca/aaip-alberta-express-entry-stream-eligibility
  * https://www.alberta.ca/aaip-rural-renewal-stream-eligibility
@@ -218,7 +218,7 @@ export function albertaScore(input: AlbertaInput): AlbertaBreakdown {
  * Eligibility determination for AAIP worker streams, separate from points.
  * A candidate can score well yet still fail the minimum eligibility criteria.
  *
- * Derived from the official stream eligibility pages (reviewed 2026-08-08):
+ * Derived from the official stream eligibility pages (reviewed 2026-09-07):
  *
  * - A full-time Alberta job offer is required by the Alberta Opportunity,
  *   Rural Renewal and Tourism and Hospitality streams; the Express Entry
@@ -231,7 +231,9 @@ export function albertaScore(input: AlbertaInput): AlbertaBreakdown {
  * - Minimum work experience: 12 months full-time within the last 18 months
  *   (Alberta) or 24 months within the last 30 (Canada or abroad) for the
  *   Opportunity stream, 12 months for Rural Renewal, and 6 consecutive months
- *   for Tourism and Hospitality. The common 12-month floor is enforced.
+ *   for Tourism and Hospitality. The form can distinguish the Tourism and
+ *   Hospitality offer, so its 6-month floor is applied when that option is
+ *   selected; the generic worker-stream floor remains 12 months.
  */
 export function eligibility(input: AlbertaInput): Eligibility {
   const reasons: string[] = []
@@ -247,9 +249,16 @@ export function eligibility(input: AlbertaInput): Eligibility {
     reasons.push(`AAIP worker streams require a minimum of CLB ${AB_MIN_CLB} overall in English or French.`)
   }
 
-  if (input.totalExperience !== 'over-12') {
+  const minimumExperienceMet =
+    input.sectorJobOffer === 'tourism-hospitality'
+      ? input.totalExperience !== 'less-6'
+      : input.totalExperience === 'over-12'
+
+  if (!minimumExperienceMet) {
     reasons.push(
-      `AAIP worker streams require a minimum of ${AB_MIN_EXPERIENCE_MONTHS} months of full-time work experience.`,
+      input.sectorJobOffer === 'tourism-hospitality'
+        ? 'The Tourism and Hospitality Stream requires at least 6 consecutive months of eligible work experience.'
+        : `AAIP worker streams require a minimum of ${AB_MIN_EXPERIENCE_MONTHS} months of full-time work experience.`,
     )
   }
 

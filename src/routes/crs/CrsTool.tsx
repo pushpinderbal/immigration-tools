@@ -6,7 +6,7 @@ import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { DrawFeed } from '../../components/DrawFeed'
-import { CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
+import { FormSections, CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
 import { convertTestToClb, emptyScores } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import { crsScore } from '../../lib/crs/score'
@@ -22,9 +22,9 @@ import type { CrsBreakdown, CrsInput, EducationLevel, WorkYears } from '../../li
 import type { CanadianEducation } from '../../lib/crs/types'
 
 const IRCC_GRID =
-  'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/eligibility/criteria-comprehensive-ranking-system/grid.html'
+  'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html'
 const IRCC_LANGUAGE =
-  'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/language-requirements.html'
+  'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/language-test.html'
 
 const EDUCATION_OPTIONS: ReadonlyArray<{ value: EducationLevel | ''; label: string }> = [
   { value: '', label: 'Select...' },
@@ -168,21 +168,24 @@ export function CrsTool() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
+    <div className="tool-page px-4 sm:px-6">
       <Seo
         title="CRS Calculator | ImmiCalc"
         description="Get a straightforward CRS score estimate for Express Entry - answer a few simple questions on age, education, language, and experience, with an instant result."
         path="/crs"
       />
       <ToolTiles current="crs" />
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">CRS Calculator</h1>
-      <p className="mt-1.5 max-w-2xl text-sm text-muted">
-        Express Entry ranks every candidate out of 1200. Enter your details and see your score, with a breakdown of
-        how each factor was awarded.
-      </p>
+      <div className="tool-header">
+        <p className="tool-kicker">Federal · Express Entry</p>
+        <h1 className="tool-title mt-3">CRS Calculator</h1>
+        <p className="tool-description">
+          Express Entry ranks every candidate out of 1200. Enter your details and see your score, with a breakdown of
+          how each factor was awarded.
+        </p>
+      </div>
 
-      <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5">
+      <div className="tool-workspace">
+        <FormSections>
           <Section title="Profile" help={IRCC_GRID}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Slider
@@ -206,7 +209,7 @@ export function CrsTool() {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Highest level of education" help={IRCC_GRID}>
                 <Select
                   ariaLabel="Highest level of education"
@@ -224,7 +227,7 @@ export function CrsTool() {
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Canadian work experience" help={IRCC_GRID}>
                 <Select
                   ariaLabel="Canadian work experience"
@@ -277,7 +280,7 @@ export function CrsTool() {
               <button
                 type="button"
                 onClick={addSecondLanguage}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+                className="add-language flex w-full items-center justify-center gap-2 text-sm"
               >
                 <span aria-hidden="true">+</span> Add {secondTitle} test
               </button>
@@ -349,7 +352,7 @@ export function CrsTool() {
           </Section>
 
           <Recommendations input={input} currentTotal={score.total} />
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated CRS score"

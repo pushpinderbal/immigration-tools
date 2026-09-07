@@ -6,6 +6,8 @@ interface Draw {
   drawDate: string
   drawSize: string
   drawCRS: string
+  name: string
+  programs: string
 }
 
 const ROUNDS_PAGE =
@@ -54,6 +56,8 @@ function parseDraws(data: unknown): Draw[] {
       drawDate: String(r.drawDateFull ?? r.drawDate ?? ''),
       drawSize: String(r.drawSize ?? ''),
       drawCRS: String(r.drawCRS ?? ''),
+      name: String(r.drawName ?? ''),
+      programs: String(r.drawText2 ?? ''),
     }
   })
 }
@@ -92,15 +96,9 @@ export function DrawFeed() {
   }, [])
 
   return (
-    <section
-      aria-label="Recent Express Entry draws"
-      className="overflow-hidden rounded-2xl border border-line bg-panel shadow-[0_1px_3px_rgb(15_23_42/0.06)]"
-    >
-      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <h2 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-          <span className="live-dot" aria-hidden="true" />
-          Recent Express Entry draws
-        </h2>
+    <section aria-label="Recent Express Entry draws" className="draw-feed score-breakdown overflow-hidden">
+      <div className="draw-feed-header flex items-center justify-between gap-2">
+        <h2 className="score-instrument-label flex items-center gap-2">Recent Express Entry draws</h2>
         <a
           href={ROUNDS_PAGE}
           target="_blank"
@@ -123,27 +121,31 @@ export function DrawFeed() {
         <p className="px-4 py-8 text-center text-sm text-muted">Loading draws...</p>
       ) : (
         <>
-          <table className="w-full text-sm">
+          <p className="draw-context">
+            Recent rounds can have different program requirements. A past cut-off is not a guarantee of an invitation.
+          </p>
+          <table className="draw-table w-full text-sm" role="table">
+            <caption className="sr-only">Recent rounds, programs, CRS cut-offs and invitations issued</caption>
             <thead>
               <tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-wider text-muted">
                 <th scope="col" className="px-4 py-2.5">
-                  Draw
+                  Round / date
                 </th>
                 <th scope="col" className="px-4 py-2.5">
-                  Date
+                  Program / category
                 </th>
                 <th scope="col" className="px-4 py-2.5 text-right">
-                  Cut-off
+                  CRS cut-off
                 </th>
                 <th scope="col" className="px-4 py-2.5 text-right">
-                  Invited
+                  Invitations
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {draws.slice(0, SHOWN).map((d) => (
-                <tr key={d.drawNumber}>
-                  <td className="px-4 py-3">
+                <tr key={d.drawNumber} role="row">
+                  <td className="draw-round px-4 py-3" role="cell">
                     {d.drawNumberHref ? (
                       <a
                         href={d.drawNumberHref}
@@ -156,22 +158,36 @@ export function DrawFeed() {
                     ) : (
                       <span className="font-medium text-ink">#{d.drawNumber}</span>
                     )}
+                    <span className="draw-date">{d.drawDate}</span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-xs tabular-nums text-muted">{d.drawDate}</td>
-                  <td className="px-4 py-3 text-right font-mono font-semibold tabular-nums text-accent">
+                  <td className="draw-program px-4 py-3" role="cell">
+                    <span className="font-medium">{d.name || 'Not specified'}</span>
+                    {d.programs && d.programs !== d.name && <span className="draw-program-detail">{d.programs}</span>}
+                  </td>
+                  <td
+                    className="draw-metric px-4 py-3 text-right font-mono font-semibold tabular-nums text-accent"
+                    role="cell"
+                  >
+                    <span className="draw-mobile-label" aria-hidden="true">
+                      CRS cut-off
+                    </span>
                     {d.drawCRS}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono font-semibold tabular-nums text-ink">
+                  <td
+                    className="draw-metric px-4 py-3 text-right font-mono font-semibold tabular-nums text-ink"
+                    role="cell"
+                  >
+                    <span className="draw-mobile-label" aria-hidden="true">
+                      Invitations
+                    </span>
                     {d.drawSize}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="border-t border-line px-4 py-3">
-            <p className="text-[11px] text-muted">
-              Pulled straight from IRCC's published data. Each draw number links to its ministerial instruction.
-            </p>
+          <div className="score-source">
+            <p>Pulled straight from IRCC's published data. Each draw number links to its ministerial instruction.</p>
           </div>
         </>
       )}

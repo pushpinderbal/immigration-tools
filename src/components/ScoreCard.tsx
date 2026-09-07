@@ -14,33 +14,33 @@ export function ScoreCard({
   variant?: 'full' | 'breakdown'
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-panel shadow-[0_1px_3px_rgb(15_23_42/0.06)]">
+    <div className="score-card score-breakdown">
       {variant === 'full' && total !== undefined && max !== undefined && (
-        <div className="border-b border-line p-5 sm:p-6">
-          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
+        <div className="score-summary border-b border-line p-5 sm:p-6">
+          <p className="score-instrument-label mb-4">{label}</p>
           <div className="flex items-baseline gap-2">
             <span
               role="status"
               aria-live="polite"
-              className="font-mono text-7xl font-semibold leading-none tabular-nums text-accent"
+              className="score-total"
             >
               {total}
             </span>
-            <span className="font-mono text-sm tabular-nums text-muted">/ {max}</span>
+            <span className="score-max">/ {max}</span>
           </div>
-          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-bg">
+          <div className="score-breakdown-bar mt-5" aria-hidden="true">
             <div
-              className="h-full rounded-full bg-accent transition-all duration-300"
-              style={{ width: `${(total / max) * 100}%` }}
+              className="score-breakdown-fill"
+              style={{ width: `${Math.max(0, Math.min(100, (total / max) * 100))}%` }}
             />
           </div>
         </div>
       )}
       <dl className="divide-y divide-line">
         {rows.map((r) => {
-          const pct = r.max ? (r.value / r.max) * 100 : 0
+          const pct = r.max ? Math.max(0, Math.min(100, (r.value / r.max) * 100)) : 0
           return (
-            <div key={r.label} className="px-5 py-3">
+            <div key={r.label} className="score-breakdown-row">
               <div className="flex items-center justify-between">
                 <dt className="text-xs font-medium text-muted">{r.label}</dt>
                 <dd className="font-mono text-sm tabular-nums text-ink">
@@ -48,19 +48,14 @@ export function ScoreCard({
                   {r.max !== undefined && <span className="text-muted"> / {r.max}</span>}
                 </dd>
               </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-bg">
-                <div
-                  className="h-full rounded-full bg-accent/30 transition-all duration-300"
-                  style={{ width: `${pct}%` }}
-                />
+              <div className="score-breakdown-bar mt-2" aria-hidden="true">
+                <div className="score-breakdown-fill" style={{ width: `${pct}%` }} />
               </div>
             </div>
           )
         })}
       </dl>
-      <div className="border-t border-line px-5 py-3">
-        <p className="text-[11px] leading-relaxed text-muted">{source}</p>
-      </div>
+      <p className="score-source">{source}</p>
     </div>
   )
 }

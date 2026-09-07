@@ -14,17 +14,20 @@ export function Recommendations({ input, currentTotal }: { input: CrsInput; curr
           latest Express Entry draw cutoffs to see how your score compares.
         </p>
       ) : (
-        <ul className="divide-y divide-line">
-          {recommendations.map((r) => {
+        <ul className="recommendation-list divide-y divide-line">
+          {recommendations.map((r, index) => {
             const isLoss = r.id === 'age-warning'
             return (
-              <li key={r.id} className="py-3.5 first:pt-0 last:pb-0">
+              <li key={r.id} className="recommendation-row first:pt-0 last:pb-0">
                 <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-sm font-medium text-ink">{r.title}</h3>
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <span className="route-index shrink-0" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                    <h3 className="text-sm font-semibold text-ink">{r.title}</h3>
+                  </div>
                   <span
                     className={cn(
-                      'shrink-0 rounded-md px-2 py-1 font-mono text-[11px] font-semibold tabular-nums',
-                      isLoss ? 'bg-accent-soft text-muted' : 'bg-accent-soft text-accent',
+                      'recommendation-points shrink-0 tabular-nums',
+                      isLoss && 'text-muted',
                     )}
                   >
                     {isLoss ? `Up to ${r.potential}` : `+${r.potential} points`}

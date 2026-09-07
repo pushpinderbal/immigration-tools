@@ -94,6 +94,7 @@ export function priorWorkExperiencePoints(workYears: number): number {
   if (workYears === 4) return 4
   if (workYears === 3) return 3
   if (workYears === 2) return 2
+  if (workYears === 1) return 1
   return 0
 }
 

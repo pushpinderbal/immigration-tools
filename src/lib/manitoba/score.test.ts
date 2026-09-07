@@ -134,7 +134,7 @@ describe('MPNP Factor 4: education', () => {
 })
 
 describe('MPNP Factor 5: adaptability', () => {
-  it('connections cap at 200', () => {
+  it('awards only the highest connection type', () => {
     expect(
       connectionsPoints({
         closeRelative: false,
@@ -144,6 +144,15 @@ describe('MPNP Factor 5: adaptability', () => {
         closeFriendOrDistantRelative: true,
       }),
     ).toBe(50)
+    expect(
+      connectionsPoints({
+        closeRelative: false,
+        authorizedWork6Months: true,
+        postSecondary2Years: true,
+        postSecondary1Year: true,
+        closeFriendOrDistantRelative: true,
+      }),
+    ).toBe(100)
     expect(
       connectionsPoints({
         closeRelative: true,
@@ -176,6 +185,31 @@ describe('MPNP Factor 5: adaptability', () => {
     // subtotal would be 200 + 500 + 50 = 750
     expect(adaptabilityPoints(connections, demand, true)).toBe(500)
     expect(adaptabilityPoints(connections, demand, false)).toBe(500)
+  })
+
+  it('awards the regional supplement with a connection or Manitoba Demand points', () => {
+    const noConnection: ManitobaInput['connections'] = {
+      closeRelative: false,
+      authorizedWork6Months: false,
+      postSecondary2Years: false,
+      postSecondary1Year: false,
+      closeFriendOrDistantRelative: false,
+    }
+    expect(
+      adaptabilityPoints(noConnection, { ongoingEmploymentJobOffer: false, strategicInitiativeIta: false }, true),
+    ).toBe(0)
+
+    const friendConnection = { ...noConnection, closeFriendOrDistantRelative: true }
+    expect(
+      adaptabilityPoints(friendConnection, { ongoingEmploymentJobOffer: false, strategicInitiativeIta: false }, true),
+    ).toBe(100)
+    expect(
+      adaptabilityPoints(friendConnection, { ongoingEmploymentJobOffer: true, strategicInitiativeIta: false }, true),
+    ).toBe(500)
+
+    expect(
+      adaptabilityPoints(noConnection, { ongoingEmploymentJobOffer: false, strategicInitiativeIta: true }, true),
+    ).toBe(500)
   })
 })
 
@@ -247,6 +281,30 @@ describe('MPNP total', () => {
 })
 
 describe('MPNP eligibility', () => {
+  it('eligibility adaptability uses one connection plus the regional supplement', () => {
+    const connections: ManitobaInput['connections'] = {
+      closeRelative: false,
+      authorizedWork6Months: true,
+      postSecondary2Years: false,
+      postSecondary1Year: false,
+      closeFriendOrDistantRelative: true,
+    }
+    // 18 language + 10 age + 12 work + 20 education + 12 connection = 72.
+    expect(eligibilityAssessmentScore(base({ connections }))).toBe(72)
+
+    const noConnection: ManitobaInput['connections'] = {
+      closeRelative: false,
+      authorizedWork6Months: false,
+      postSecondary2Years: false,
+      postSecondary1Year: false,
+      closeFriendOrDistantRelative: false,
+    }
+    // Regional points are supplemental and cannot replace a connection.
+    expect(
+      eligibilityAssessmentScore(base({ connections: noConnection, regionalDevelopmentOutsideWinnipeg: true })),
+    ).toBe(60)
+  })
+
   it('default profile is eligible', () => {
     const result = eligibility(base())
     expect(result.eligible).toBe(true)

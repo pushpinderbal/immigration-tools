@@ -3,14 +3,15 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "bun@1.4.2",
   "description": "Canadian immigration point calculators for Express Entry CRS and provincial PNP programs.",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "dev": "bunx --bun vite",
+    "build": "bunx --bun tsc --noEmit && bunx --bun vite build",
+    "preview": "bunx --bun vite preview",
+    "test": "bunx --bun vitest run",
+    "test:watch": "bunx --bun vitest",
+    "typecheck": "bunx --bun tsc --noEmit"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

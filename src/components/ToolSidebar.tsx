@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { cn, Segmented } from './ui'
 
 function useDirection(value: number): 'up' | 'down' | 'none' {
   const prev = useRef(value)
@@ -44,7 +43,7 @@ function ScorePot({ value, max }: { value: number; max: number }) {
   const waterTop = 52 - waterHeight
 
   return (
-    <svg viewBox="0 0 64 64" className="h-24 w-16 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 64 64" className="h-28 w-20 shrink-0" aria-hidden="true">
       <defs>
         <clipPath id="score-pot-clip">
           <path d="M10 12 h44 l-3 32 c-1 8 -37 8 -38 0 Z" />
@@ -55,14 +54,15 @@ function ScorePot({ value, max }: { value: number; max: number }) {
         </linearGradient>
       </defs>
 
+      <path d="M10 12 h44 l-3 32 c-1 8 -37 8 -38 0 Z" fill="var(--color-paper)" />
       <path
         d="M10 12 h44 l-3 32 c-1 8 -37 8 -38 0 Z"
         fill="none"
-        stroke="var(--color-line)"
-        strokeWidth="2.5"
+        stroke="var(--color-accent)"
+        strokeWidth="2"
         strokeLinejoin="round"
       />
-      <ellipse cx="32" cy="12" rx="22" ry="4" fill="none" stroke="var(--color-line)" strokeWidth="2.5" />
+      <ellipse cx="32" cy="12" rx="22" ry="4" fill="none" stroke="var(--color-accent)" strokeWidth="2" />
 
       <g clipPath="url(#score-pot-clip)">
         <rect
@@ -73,18 +73,37 @@ function ScorePot({ value, max }: { value: number; max: number }) {
           fill="url(#score-pot-water)"
           style={{ transition: 'height 0.7s ease, y 0.7s ease' }}
         />
+        <path d="M12 28h40M12 38h40" stroke="var(--color-panel)" strokeOpacity="0.38" strokeWidth="1" />
       </g>
+
+      <path d="M56 18h4M56 28h4M56 38h4M56 48h4" stroke="var(--color-warn)" strokeWidth="1.25" />
 
       {burst === 'up' && (
         <>
           <ellipse className="drip-in" cx="25" cy="2" rx="2" ry="3" fill="var(--color-accent)" />
-          <ellipse className="drip-in" cx="40" cy="2" rx="2" ry="3" fill="var(--color-accent)" style={{ animationDelay: '0.45s' }} />
+          <ellipse
+            className="drip-in"
+            cx="40"
+            cy="2"
+            rx="2"
+            ry="3"
+            fill="var(--color-accent)"
+            style={{ animationDelay: '0.45s' }}
+          />
         </>
       )}
       {burst === 'down' && (
         <>
           <ellipse className="drip-out" cx="27" cy="52" rx="2" ry="3" fill="var(--color-accent)" />
-          <ellipse className="drip-out" cx="39" cy="52" rx="2" ry="3" fill="var(--color-accent)" style={{ animationDelay: '0.4s' }} />
+          <ellipse
+            className="drip-out"
+            cx="39"
+            cy="52"
+            rx="2"
+            ry="3"
+            fill="var(--color-accent)"
+            style={{ animationDelay: '0.4s' }}
+          />
         </>
       )}
     </svg>
@@ -104,86 +123,165 @@ export function ToolSidebar({
   breakdown: ReactNode
   draws?: ReactNode
 }) {
-  const [tab, setTab] = useState<'breakdown' | 'draws'>('breakdown')
-  const [open, setOpen] = useState(false)
-  const hasDraws = draws !== undefined
-
-  const onTabChange = (v: 'breakdown' | 'draws') => {
-    if (v === 'breakdown') {
-      if (tab === 'breakdown') {
-        setOpen(!open)
-      } else {
-        setTab('breakdown')
-        setOpen(true)
-      }
-    } else {
-      setTab('draws')
-    }
-  }
-
-  const breakdownLabel = (
-    <span className="inline-flex items-center gap-1">
-      Breakdown
-      <svg
-        aria-hidden="true"
-        className={cn('h-3 w-3 transition-transform', tab === 'breakdown' && open && 'rotate-180')}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-    </span>
-  )
+  const [active, setActive] = useState<'breakdown' | 'draws' | null>(null)
 
   return (
-    <div className="no-scrollbar contents lg:block lg:space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto lg:pb-1">
+    <div className="contents tool-sidebar lg:block lg:space-y-4 lg:sticky lg:top-6 lg:self-start">
       <div className="order-first sticky top-0 z-10">
-        <div className="rounded-2xl border border-line bg-panel p-5 shadow-[0_1px_3px_rgb(15_23_42/0.06)]">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
-          <div className="flex items-center gap-4">
+        <div className="score-instrument p-4 pt-5 sm:p-5">
+          <p className="score-instrument-label mb-4">{label}</p>
+          <div className="flex items-center gap-3">
             <ScorePot value={total} max={max} />
             <div className="flex flex-col">
-              <span
-                role="status"
-                aria-live="polite"
-                className="font-mono text-5xl font-semibold leading-none tabular-nums text-accent"
-              >
+              <span role="status" aria-live="polite" className="score-total">
                 {total}
               </span>
-              <span className="mt-1 font-mono text-sm tabular-nums text-muted">of {max}</span>
+              <span className="score-max mt-2">of {max}</span>
             </div>
           </div>
+          <p className="score-hint">Updates as you answer. Open your breakdown to explore each scoring factor.</p>
         </div>
       </div>
 
-      <div className="order-first">
-        {hasDraws ? (
-          <Segmented
-            ariaLabel="Sidebar"
-            value={tab}
-            onChange={onTabChange}
-            options={[
-              { value: 'breakdown', label: breakdownLabel },
-              { value: 'draws', label: 'Historical draws' },
-            ]}
-          />
-        ) : (
-          <Segmented
-            ariaLabel="Sidebar"
-            value={tab}
-            onChange={onTabChange}
-            options={[{ value: 'breakdown', label: breakdownLabel }]}
-          />
+      <div className="score-actions order-first" role="group" aria-label="Score details">
+        <button
+          type="button"
+          className="score-action"
+          aria-label="Breakdown"
+          aria-haspopup="dialog"
+          onClick={() => setActive('breakdown')}
+        >
+          <span className="score-action-icon" aria-hidden="true">
+            ▤
+          </span>
+          <span>
+            <span className="score-action-title">Breakdown</span>
+            <span className="score-action-description">See how your points add up</span>
+          </span>
+          <span aria-hidden="true">↗</span>
+        </button>
+        {draws !== undefined && (
+          <button
+            type="button"
+            className="score-action"
+            aria-label="Historical draws"
+            aria-haspopup="dialog"
+            onClick={() => setActive('draws')}
+          >
+            <span className="score-action-icon is-history" aria-hidden="true">
+              ↗
+            </span>
+            <span>
+              <span className="score-action-title">Historical draws</span>
+              <span className="score-action-description">Explore recent invitation rounds</span>
+            </span>
+            <span aria-hidden="true">↗</span>
+          </button>
         )}
       </div>
 
-      {hasDraws && tab === 'draws' ? (
-        <div className="order-first">{draws}</div>
-      ) : open ? (
-        <div className="order-first">{breakdown}</div>
-      ) : null}
+      <ScoreDetailsDialog
+        open={active === 'breakdown'}
+        onClose={() => setActive(null)}
+        title="Score breakdown"
+        label={label}
+      >
+        <p className="dialog-score">
+          <strong>{total}</strong> / {max} points
+        </p>
+        <p className="details-intro">
+          Your points, factor by factor. Return to the calculator to try different answers.
+        </p>
+        {breakdown}
+      </ScoreDetailsDialog>
+      {draws !== undefined && (
+        <ScoreDetailsDialog
+          open={active === 'draws'}
+          onClose={() => setActive(null)}
+          title="Draw history"
+          label="Express Entry"
+        >
+          {draws}
+        </ScoreDetailsDialog>
+      )}
     </div>
+  )
+}
+
+function ScoreDetailsDialog({
+  open,
+  onClose,
+  title,
+  label,
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  title: string
+  label: string
+  children: ReactNode
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (open && !dialog.open) dialog.showModal()
+    if (!open && dialog.open) dialog.close()
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="score-dialog"
+      aria-labelledby={titleId}
+      onCancel={(event) => {
+        event.preventDefault()
+        onClose()
+      }}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return
+        const bounds = event.currentTarget.getBoundingClientRect()
+        if (
+          event.clientX < bounds.left ||
+          event.clientX > bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY > bounds.bottom
+        )
+          onClose()
+      }}
+    >
+      {open && (
+        <>
+          <header className="score-dialog-header">
+            <div>
+              <p className="section-kicker">{label}</p>
+              <h2 id={titleId}>{title}</h2>
+            </div>
+            <button
+              type="button"
+              className="dialog-close"
+              aria-label={`Close ${title.toLowerCase()}`}
+              autoFocus
+              onClick={onClose}
+            >
+              ×
+            </button>
+          </header>
+          <div className="score-dialog-body">{children}</div>
+        </>
+      )}
+    </dialog>
   )
 }

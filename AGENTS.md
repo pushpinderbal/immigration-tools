@@ -4,16 +4,16 @@ Guidance for AI agents working in this repo. It is a React 19 + TypeScript + Tai
 
 ## Commands
 
-- `npm run dev` - local dev server
-- `npm run test` - run all vitest tests
-- `npm run typecheck` - `tsc --noEmit`
-- `npm run build` - typecheck + production build
+- `bun run dev` - local dev server
+- `bun run test` - run all vitest tests
+- `bun run typecheck` - `tsc --noEmit`
+- `bun run build` - typecheck + production build
 
 ## Hard rules
 
 - No em-dashes in user-facing copy or code comments. Use hyphens, commas, or restructure. En-dashes only in numeric ranges like "13-24 months".
 - When computing what-if or recommendation point gains, simulate by re-running the score function on modified copies of the input. Never hardcode point deltas.
-- Run `npm run typecheck` and `npm test` before finishing any change.
+- Run `bun run typecheck` and `bun run test` before finishing any change.
 
 ## Conventions
 

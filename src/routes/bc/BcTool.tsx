@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
+import { FormSections, CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -99,6 +99,7 @@ const DEFAULT_UI: BcUiState = {
 
 export function BcTool() {
   const [ui, setUi] = useState<BcUiState>(DEFAULT_UI)
+  const [hasStarted, setHasStarted] = useState(false)
 
   const { score, eligibilityResult } = useMemo(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
@@ -120,28 +121,36 @@ export function BcTool() {
     return { score: bcScore(input), eligibilityResult: eligibility(input) }
   }, [ui])
 
-  const patch = (p: Partial<BcUiState>) => setUi((prev) => ({ ...prev, ...p }))
+  const patch = (p: Partial<BcUiState>) => {
+    setHasStarted(true)
+    setUi((prev) => ({ ...prev, ...p }))
+  }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
+    <div className="tool-page px-4 sm:px-6">
       <Seo
         title="BC PNP Points Calculator | ImmiCalc"
         description="Get a straightforward BC PNP points estimate for Skills Immigration and Express Entry BC - a few simple questions, instant result."
         path="/bc"
       />
       <ToolTiles current="bc" />
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">BC PNP Points Calculator</h1>
-      <p className="mt-1.5 max-w-2xl text-sm text-muted">
-        BC scores Skills Immigration and Express Entry BC candidates out of 200. Enter your details to see your points
-        and how they add up.
-      </p>
-
-      <div className="mt-6">
-        <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+      <div className="tool-header">
+        <p className="tool-kicker">British Columbia · Provincial program</p>
+        <h1 className="tool-title mt-3">BC PNP Points Calculator</h1>
+        <p className="tool-description">
+          BC scores Skills Immigration and Express Entry BC candidates out of 200. Enter your details to see your
+          points and how they add up.
+        </p>
       </div>
 
-      <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5">
+      {hasStarted && (
+        <div className="mt-6">
+          <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
+        </div>
+      )}
+
+      <div className="tool-workspace">
+        <FormSections>
           <Section title="Work experience" help={BC_DOC}>
             <Field label="Directly related work experience" help={BC_DOC}>
               <Select
@@ -204,7 +213,7 @@ export function BcTool() {
               <button
                 type="button"
                 onClick={() => patch({ french: { test: 'tef', scores: emptyScores() } })}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+                className="add-language flex w-full items-center justify-center gap-2 text-sm"
               >
                 <span aria-hidden="true">+</span> Add French test
               </button>
@@ -254,7 +263,7 @@ export function BcTool() {
             )}
             <Note>Wage points rise one point per dollar above $15 per hour, capped at 55.</Note>
           </Section>
-        </div>
+        </FormSections>
 
         <ToolSidebar
           label="Estimated BC PNP EOI score"

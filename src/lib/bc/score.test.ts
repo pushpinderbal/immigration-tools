@@ -60,6 +60,10 @@ describe('BC PNP SIRS factor points (official grid)', () => {
     expect(educationLocationPoints('none')).toBe(0)
   })
 
+  it('does not award a post-secondary location bonus for secondary education', () => {
+    expect(bcScore(base({ education: 'secondary', educationLocation: 'bc' })).education).toBe(0)
+  })
+
   it('eligible BC professional designation stacks with the education location bonus', () => {
     expect(professionalDesignationPoints(true)).toBe(5)
     expect(professionalDesignationPoints(false)).toBe(0)
@@ -209,12 +213,14 @@ describe('BC PNP eligibility (Skills Immigration general requirements)', () => {
   })
 
   it('applies the higher Metro Vancouver wage floor in Area 1', () => {
-    expect(minimumIncomeWage('area-1')).toBe(15.03)
+    expect(minimumIncomeWage('area-1')).toBe(15.04)
     expect(minimumIncomeWage('area-2')).toBe(12.53)
     expect(minimumIncomeWage('area-3')).toBe(12.53)
     // $13/hr clears the rest-of-BC floor but not the Metro Vancouver floor
     expect(eligibility(base({ hourlyWage: 13, area: 'area-1' })).eligible).toBe(false)
     expect(eligibility(base({ hourlyWage: 13, area: 'area-3' })).eligible).toBe(true)
+    expect(eligibility(base({ hourlyWage: 15.03, area: 'area-1' })).eligible).toBe(false)
+    expect(eligibility(base({ hourlyWage: 15.04, area: 'area-1' })).eligible).toBe(true)
   })
 
   it('reports one reason per unmet requirement', () => {

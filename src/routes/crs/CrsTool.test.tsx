@@ -53,9 +53,11 @@ describe('CrsTool', () => {
   it('shows the spouse section and recalculates when an accompanying spouse is selected', () => {
     renderCrs()
     fillStandardProfile()
-    expect(screen.queryByText('Spouse or partner')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Spouse or partner' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Spouse or partner' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }))
-    expect(screen.getByText('Spouse or partner')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Spouse or partner/ })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Spouse or partner' }).getAttribute('href')).toBe('#section-spouse-or-partner')
     // with-spouse core (95 + 112 + 64 = 271) + spouse (2) + transferability (13) = 286
     expect(total()).toBe('286')
   })

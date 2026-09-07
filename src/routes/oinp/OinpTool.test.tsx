@@ -36,6 +36,17 @@ function fillStandardProfile() {
 }
 
 describe('OinpTool', () => {
+  it('waits for an answer before showing eligibility', () => {
+    renderOinp()
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('You appear eligible')).toBeNull()
+    const education = screen.getByLabelText('Highest level of education')
+    fireEvent.focus(education)
+    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    fireEvent.change(education, { target: { value: 'bachelor' } })
+    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+  })
+
   it('starts blank with a near-zero score', () => {
     renderOinp()
     expect(total()).toBe('4')

@@ -1,8 +1,8 @@
 /**
  * BC PNP SIRS scoring - Skills Immigration / Express Entry BC points grid.
  *
- * Source: BC PNP "Skills Immigration Program Guide", Part 8 (effective May 28, 2026,
- * guide last updated June 10, 2026) (welcomebc.ca)
+ * Source: BC PNP "Skills Immigration Program Guide", Part 8 (guide effective
+ * June 10, 2026; scoring sections carried forward from May 28, 2026) (welcomebc.ca)
  * https://www.welcomebc.ca/immigrate-to-b-c/bc-pnp-si-program-guide-pdf
  *
  * Total = 200 points: Human Capital (max 120) + Economic (max 80).
@@ -155,9 +155,13 @@ export function bcScore(input: BcInput): BcBreakdown {
     (input.canadianExperience ? 10 : 0) +
     (input.workingInBc ? 10 : 0)
 
+  // The location bonus is only available when the highest credential is
+  // post-secondary. A high-school credential cannot claim this bonus even if
+  // the location field is populated.
+  const locationBonus = input.education === 'secondary' ? 0 : educationLocationPoints(input.educationLocation)
   const education =
     educationPoints(input.education) +
-    educationLocationPoints(input.educationLocation) +
+    locationBonus +
     professionalDesignationPoints(input.professionalDesignation)
 
   const bestClb = Math.max(input.englishClb, input.frenchClb)
@@ -193,7 +197,9 @@ const MIN_EXPERIENCE_BANDS: readonly WorkExperienceBand[] = ['2-3', '3-4', '4-5'
  */
 export function minimumIncomeWage(area: AreaBand): number {
   const lico = area === 'area-1' ? LICO_METRO_VANCOUVER_SINGLE : LICO_REST_OF_BC_SINGLE
-  return Math.round((lico / HOURS_PER_YEAR) * 100) / 100
+  // Round up to the next cent so the annualized wage cannot fall below the
+  // published income threshold due to rounding down.
+  return Math.ceil((lico / HOURS_PER_YEAR) * 100) / 100
 }
 
 /**
