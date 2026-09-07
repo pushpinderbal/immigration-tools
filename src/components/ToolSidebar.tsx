@@ -44,7 +44,7 @@ function ScorePot({ value, max }: { value: number; max: number }) {
   const waterTop = 52 - waterHeight
 
   return (
-    <svg viewBox="0 0 64 64" className="h-24 w-16 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 64 64" className="h-28 w-20 shrink-0" aria-hidden="true">
       <defs>
         <clipPath id="score-pot-clip">
           <path d="M10 12 h44 l-3 32 c-1 8 -37 8 -38 0 Z" />
@@ -55,14 +55,15 @@ function ScorePot({ value, max }: { value: number; max: number }) {
         </linearGradient>
       </defs>
 
+      <path d="M10 12 h44 l-3 32 c-1 8 -37 8 -38 0 Z" fill="var(--color-paper)" />
       <path
         d="M10 12 h44 l-3 32 c-1 8 -37 8 -38 0 Z"
         fill="none"
-        stroke="var(--color-line)"
-        strokeWidth="2.5"
+        stroke="var(--color-accent)"
+        strokeWidth="2"
         strokeLinejoin="round"
       />
-      <ellipse cx="32" cy="12" rx="22" ry="4" fill="none" stroke="var(--color-line)" strokeWidth="2.5" />
+      <ellipse cx="32" cy="12" rx="22" ry="4" fill="none" stroke="var(--color-accent)" strokeWidth="2" />
 
       <g clipPath="url(#score-pot-clip)">
         <rect
@@ -73,7 +74,10 @@ function ScorePot({ value, max }: { value: number; max: number }) {
           fill="url(#score-pot-water)"
           style={{ transition: 'height 0.7s ease, y 0.7s ease' }}
         />
+        <path d="M12 28h40M12 38h40" stroke="var(--color-panel)" strokeOpacity="0.38" strokeWidth="1" />
       </g>
+
+      <path d="M56 18h4M56 28h4M56 38h4M56 48h4" stroke="var(--color-warn)" strokeWidth="1.25" />
 
       {burst === 'up' && (
         <>
@@ -138,27 +142,27 @@ export function ToolSidebar({
   )
 
   return (
-    <div className="no-scrollbar contents lg:block lg:space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto lg:pb-1">
+    <div className="no-scrollbar contents tool-sidebar lg:block lg:space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:self-start lg:overflow-y-auto lg:pb-1">
       <div className="order-first sticky top-0 z-10">
-        <div className="rounded-2xl border border-line bg-panel p-5 shadow-[0_1px_3px_rgb(15_23_42/0.06)]">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
-          <div className="flex items-center gap-4">
+        <div className="score-instrument p-4 pt-5 sm:p-5">
+          <p className="score-instrument-label mb-4">{label}</p>
+          <div className="flex items-center gap-3">
             <ScorePot value={total} max={max} />
             <div className="flex flex-col">
               <span
                 role="status"
                 aria-live="polite"
-                className="font-mono text-5xl font-semibold leading-none tabular-nums text-accent"
+                className="score-total"
               >
                 {total}
               </span>
-              <span className="mt-1 font-mono text-sm tabular-nums text-muted">of {max}</span>
+              <span className="score-max mt-2">of {max}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="order-first">
+      <div className="sidebar-tabs order-first">
         {hasDraws ? (
           <Segmented
             ariaLabel="Sidebar"

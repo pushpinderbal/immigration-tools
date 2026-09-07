@@ -12,14 +12,14 @@ Calculate your Express Entry and PNP scores in the browser.
 ## Getting started
 
 ```sh
-npm install
-npm run dev
-npm test
-npm run typecheck
-npm run build
+bun install
+bun run dev
+bun run test
+bun run typecheck
+bun run build
 ```
 
-`npm run build` runs typecheck plus the production build.
+`bun run build` runs typecheck plus the production build.
 
 ## Disclaimers
 

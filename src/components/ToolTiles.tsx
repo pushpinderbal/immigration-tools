@@ -112,9 +112,10 @@ export function ToolTiles({ current }: { current?: string }) {
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-xl border border-line bg-panel px-3 py-2 text-sm font-medium text-ink shadow-[0_1px_3px_rgb(15_23_42/0.06)] transition-colors hover:border-accent/40"
+        className="tool-switcher"
       >
-        <span className="text-muted">Switch tool</span>
+        <span className="tool-switcher-index" aria-hidden="true">INDEX</span>
+        <span>Switch tool</span>
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
@@ -132,9 +133,9 @@ export function ToolTiles({ current }: { current?: string }) {
       {open && (
         <nav
           aria-label="Tools"
-          className="absolute left-0 top-full z-20 mt-2 w-64 rounded-2xl border border-line bg-panel p-1.5 shadow-[0_8px_24px_rgb(15_23_42/0.12)]"
+          className="tool-menu absolute left-0 top-full z-20 mt-2 w-72"
         >
-          {TOOLS.map((tool) => {
+          {TOOLS.map((tool, index) => {
             const active = tool.id === current
             return (
               <Link
@@ -144,12 +145,13 @@ export function ToolTiles({ current }: { current?: string }) {
                 onClick={() => setOpen(false)}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors',
-                  active ? 'bg-accent-soft font-medium text-ink' : 'text-muted hover:bg-accent-soft/60 hover:text-ink',
+                  'tool-menu-link',
+                  active && 'is-active',
                 )}
               >
+                <span className="tool-menu-index">{String(index + 1).padStart(2, '0')}</span>
                 <span className={cn('h-4 w-4 shrink-0', active ? 'text-accent' : 'text-muted')}>{tool.icon}</span>
-                {tool.name}
+                <span className="tool-menu-label">{tool.name}</span>
               </Link>
             )
           })}

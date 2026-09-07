@@ -166,13 +166,12 @@ export function educationPoints(education: ManitobaEducation): number {
 // --- Factor 5: Adaptability ---
 
 export function connectionsPoints(connections: ManitobaConnections): number {
-  let total = 0
-  if (connections.closeRelative) total += 200
-  if (connections.authorizedWork6Months) total += 100
-  if (connections.postSecondary2Years) total += 100
-  if (connections.postSecondary1Year) total += 50
-  if (connections.closeFriendOrDistantRelative) total += 50
-  return Math.min(MAX_CONNECTIONS, total)
+  // The EOI grid awards only the highest-scoring Manitoba connection when an
+  // applicant has more than one connection type.
+  if (connections.closeRelative) return 200
+  if (connections.authorizedWork6Months || connections.postSecondary2Years) return 100
+  if (connections.postSecondary1Year || connections.closeFriendOrDistantRelative) return 50
+  return 0
 }
 
 export function demandPoints(demand: ManitobaDemand): number {
@@ -187,10 +186,12 @@ export function adaptabilityPoints(
   demand: ManitobaDemand,
   regionalDevelopmentOutsideWinnipeg: boolean,
 ): number {
-  const subtotal =
-    connectionsPoints(connections) +
-    demandPoints(demand) +
-    (regionalDevelopmentOutsideWinnipeg ? 50 : 0)
+  const connection = connectionsPoints(connections)
+  const demandScore = demandPoints(demand)
+  // Regional development points are supplemental. They require another
+  // Manitoba connection, except that Manitoba Demand is itself sufficient.
+  const regional = regionalDevelopmentOutsideWinnipeg && (connection > 0 || demandScore > 0) ? 50 : 0
+  const subtotal = connection + demandScore + regional
   return Math.min(MAX_ADAPTABILITY, subtotal)
 }
 
@@ -290,15 +291,17 @@ function eligibilityAdaptabilityPoints(
   demand: ManitobaDemand,
   regionalDevelopmentOutsideWinnipeg: boolean,
 ): number {
-  let total = 0
-  if (connections.closeRelative) total += 20
-  if (connections.authorizedWork6Months) total += 12
-  if (connections.postSecondary2Years) total += 12
-  if (connections.postSecondary1Year) total += 10
-  if (connections.closeFriendOrDistantRelative) total += 10
-  if (demand.strategicInitiativeIta) total += 20
-  if (regionalDevelopmentOutsideWinnipeg) total += 5
-  return Math.min(25, total)
+  // The eligibility worksheet permits one Manitoba connection, plus the
+  // regional supplement when a qualifying connection is present.
+  let connection = 0
+  if (connections.closeRelative) connection = 20
+  else if (connections.authorizedWork6Months || connections.postSecondary2Years) connection = 12
+  else if (connections.postSecondary1Year || connections.closeFriendOrDistantRelative) connection = 10
+
+  // A strategic initiative invitation is itself the one connection option.
+  if (demand.strategicInitiativeIta) connection = Math.max(connection, 20)
+  const regional = regionalDevelopmentOutsideWinnipeg && connection > 0 ? 5 : 0
+  return Math.min(25, connection + regional)
 }
 
 export function eligibilityAssessmentScore(input: ManitobaInput): number {

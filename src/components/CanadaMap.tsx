@@ -65,63 +65,84 @@ export function CanadaMap() {
   const hoveredName = canada.locations.find((l) => l.id === hovered)?.name
 
   return (
-    <div className="rounded-2xl border border-line bg-panel p-5 shadow-[0_1px_3px_rgb(15_23_42/0.06)] sm:p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">Provincial calculators</h2>
-        <p className="text-xs text-muted" aria-live="polite">
-          {hoveredName ? `${hoveredName} - click to open` : 'Choose a province'}
+    <section className="map-card" aria-labelledby="map-title">
+      <div className="map-card-header">
+        <div>
+          <p className="section-kicker">PROVINCIAL INDEX / 05 LIVE ROUTES</p>
+          <h2 id="map-title" className="map-card-title mt-2">Choose a province</h2>
+        </div>
+        <p className="coordinate-label" aria-live="polite">
+          {hoveredName ? `${hoveredName} / OPEN ROUTE` : 'HOVER OR FOCUS'}
         </p>
       </div>
 
-      <svg viewBox={canada.viewBox} role="img" aria-label="Map of Canada" className="mx-auto mt-4 block h-[min(64vh,520px)] w-auto">
-        {canada.locations.map((loc) => {
-          const entry = PROVINCE_ROUTES[loc.id]
-          const pos = labelPosition(loc.path)
-          return (
-            <g key={loc.id}>
-              <path
-                d={loc.path}
-                className={cn(
-                  'transition-colors',
-                  entry
-                    ? 'cursor-pointer fill-accent-soft stroke-accent/60 hover:fill-accent hover:stroke-accent hover:brightness-95'
-                    : 'fill-line/50 stroke-line',
-                )}
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-                tabIndex={entry ? 0 : undefined}
-                role={entry ? 'link' : undefined}
-                aria-label={entry ? `${loc.name}: open calculator` : `${loc.name}: no calculator yet`}
-                onClick={entry ? () => go(entry.to) : undefined}
-                onKeyDown={
-                  entry
-                    ? (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          go(entry.to)
+      <div className="map-stage">
+        <svg
+          viewBox={canada.viewBox}
+          role="img"
+          aria-label="Map of Canada"
+          className="mx-auto mt-4 block h-auto max-h-[min(64vh,520px)] w-full"
+        >
+          {canada.locations.map((loc) => {
+            const entry = PROVINCE_ROUTES[loc.id]
+            const pos = labelPosition(loc.path)
+            return (
+              <g key={loc.id}>
+                <path
+                  d={loc.path}
+                  className={cn(
+                    'transition-colors',
+                    entry
+                      ? 'cursor-pointer fill-accent-soft stroke-accent/70 hover:fill-accent hover:stroke-accent hover:brightness-95'
+                      : 'fill-mineral/80 stroke-line',
+                  )}
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                  tabIndex={entry ? 0 : undefined}
+                  role={entry ? 'link' : undefined}
+                  aria-label={entry ? `${loc.name}: open calculator` : `${loc.name}: no calculator yet`}
+                  onClick={entry ? () => go(entry.to) : undefined}
+                  onKeyDown={
+                    entry
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            go(entry.to)
+                          }
                         }
-                      }
-                    : undefined
-                }
-                onMouseEnter={() => setHovered(loc.id)}
-                onMouseLeave={() => setHovered((h) => (h === loc.id ? null : h))}
-              >
-                <title>{loc.name}</title>
-              </path>
-              <text
-                x={pos.x}
-                y={pos.y}
-                textAnchor="middle"
-                dominantBaseline="central"
-                className={cn('pointer-events-none select-none font-semibold', entry ? 'fill-ink' : 'fill-muted/70')}
-                style={{ fontSize: 20 }}
-              >
-                {PROVINCE_CODES[loc.id]}
-              </text>
-            </g>
-          )
-        })}
-      </svg>
-    </div>
+                      : undefined
+                  }
+                  onMouseEnter={() => setHovered(loc.id)}
+                  onMouseLeave={() => setHovered((h) => (h === loc.id ? null : h))}
+                >
+                  <title>{loc.name}</title>
+                </path>
+                <text
+                  x={pos.x}
+                  y={pos.y}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className={cn('pointer-events-none select-none font-semibold', entry ? 'fill-ink' : 'fill-muted/70')}
+                  style={{ fontSize: 20 }}
+                >
+                  {PROVINCE_CODES[loc.id]}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+
+      <div className="map-legend" aria-label="Map legend">
+        <span className="map-legend-item">
+          <span className="map-legend-swatch" aria-hidden="true" />
+          Calculator available
+        </span>
+        <span className="map-legend-item">
+          <span className="map-legend-swatch is-muted" aria-hidden="true" />
+          Route not yet indexed
+        </span>
+      </div>
+    </section>
   )
 }

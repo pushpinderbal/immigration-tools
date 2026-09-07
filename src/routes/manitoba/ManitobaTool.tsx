@@ -128,24 +128,27 @@ export function ManitobaTool() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
+    <div className="tool-page px-4 sm:px-6">
       <Seo
         title="Manitoba MPNP Points Calculator | ImmiCalc"
         description="Get a straightforward MPNP Expression of Interest points estimate for Manitoba - a few simple questions, instant result."
         path="/manitoba"
       />
       <ToolTiles current="manitoba" />
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">Manitoba MPNP Points Calculator</h1>
-      <p className="mt-1.5 max-w-2xl text-sm text-muted">
-        Manitoba ranks Skilled Worker candidates in its Expression of Interest pool out of 1000. Enter your details
-        to see your points and how each factor adds up.
-      </p>
+      <div className="tool-header">
+        <p className="tool-kicker">06 / MANITOBA ROUTE</p>
+        <h1 className="tool-title mt-3">Manitoba MPNP Points Calculator</h1>
+        <p className="tool-description">
+          Manitoba ranks Skilled Worker candidates in its Expression of Interest pool out of 1000. Enter your details
+          to see your points and how each factor adds up.
+        </p>
+      </div>
 
       <div className="mt-6">
         <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
       </div>
 
-      <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="tool-workspace">
         <div className="space-y-5">
           <Section title="Language" help={MB_LANGUAGE_DOC}>
             <LanguageTestInputs
@@ -165,7 +168,7 @@ export function ManitobaTool() {
               <button
                 type="button"
                 onClick={addSecondLanguage}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+                className="add-language flex w-full items-center justify-center gap-2 text-sm"
               >
                 <span aria-hidden="true">+</span> Add second language test
               </button>

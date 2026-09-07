@@ -2,8 +2,7 @@
  * CRS score improvement recommendations.
  *
  * Pure function: never mutates the input, computes every point gain by running
- * `crsScore` on hypothetical copies of the input. Provincial nomination is the
- * one exception because it is a fixed +600 in the additional-points grid.
+ * `crsScore` on hypothetical copies of the input.
  */
 
 import { overallClb } from './languages'
@@ -163,7 +162,7 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
       'provincial-nomination',
       'Get a provincial nomination',
       'A provincial nomination adds 600 points and is the single biggest point gain in Express Entry. Apply to the streams run by the provinces where you are willing to live and work.',
-      600,
+      pointGain(baseTotal, withChanges(input, { provincialNomination: true })),
     )
   }
 

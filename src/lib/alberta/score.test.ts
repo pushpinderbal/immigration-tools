@@ -239,6 +239,16 @@ describe('AAIP worker stream eligibility (separate from points)', () => {
     expect(result.reasons[0]).toMatch(/12 months/)
   })
 
+  it('uses the Tourism and Hospitality stream 6-month experience floor', () => {
+    expect(
+      eligibility(base({ sectorJobOffer: 'tourism-hospitality', totalExperience: '6-11' })),
+    ).toEqual({ eligible: true, reasons: [] })
+
+    const result = eligibility(base({ sectorJobOffer: 'tourism-hospitality', totalExperience: 'less-6' }))
+    expect(result.eligible).toBe(false)
+    expect(result.reasons[0]).toMatch(/6 consecutive months/)
+  })
+
   it('reports every unmet criterion in a single evaluation', () => {
     const result = eligibility(base({ englishClb: 2, frenchClb: 0, totalExperience: 'less-6' }))
     expect(result.eligible).toBe(false)

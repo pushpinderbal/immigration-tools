@@ -94,10 +94,10 @@ export function DrawFeed() {
   return (
     <section
       aria-label="Recent Express Entry draws"
-      className="overflow-hidden rounded-2xl border border-line bg-panel shadow-[0_1px_3px_rgb(15_23_42/0.06)]"
+      className="draw-feed score-breakdown overflow-hidden"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <h2 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
+      <div className="draw-feed-header flex items-center justify-between gap-2">
+        <h2 className="score-instrument-label flex items-center gap-2">
           <span className="live-dot" aria-hidden="true" />
           Recent Express Entry draws
         </h2>
@@ -168,8 +168,8 @@ export function DrawFeed() {
               ))}
             </tbody>
           </table>
-          <div className="border-t border-line px-4 py-3">
-            <p className="text-[11px] text-muted">
+          <div className="score-source">
+            <p>
               Pulled straight from IRCC's published data. Each draw number links to its ministerial instruction.
             </p>
           </div>

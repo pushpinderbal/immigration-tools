@@ -47,6 +47,7 @@ const WORK_OPTIONS = [
 const PRIOR_WORK_OPTIONS = [
   { value: '', label: 'Select...' },
   { value: '0', label: 'Less than 1 year' },
+  { value: '1', label: '1 year' },
   { value: '2', label: '2 years' },
   { value: '3', label: '3 years' },
   { value: '4', label: '4 years' },
@@ -112,24 +113,27 @@ export function SaskatchewanTool() {
   const patch = (p: Partial<SinpUiState>) => setUi((prev) => ({ ...prev, ...p }))
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-12 sm:px-6">
+    <div className="tool-page px-4 sm:px-6">
       <Seo
         title="SINP Points Calculator | ImmiCalc"
         description="A straightforward SINP points check for Saskatchewan's International Skilled Worker program - a few simple questions, instant result."
         path="/saskatchewan"
       />
       <ToolTiles current="saskatchewan" />
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink">SINP Points Calculator</h1>
-      <p className="mt-1.5 max-w-2xl text-sm text-muted">
-        Saskatchewan scores International Skilled Worker candidates out of 110. Enter your details to see your points
-        and how they add up.
-      </p>
+      <div className="tool-header">
+        <p className="tool-kicker">04 / SASKATCHEWAN ROUTE</p>
+        <h1 className="tool-title mt-3">SINP Points Calculator</h1>
+        <p className="tool-description">
+          Saskatchewan scores International Skilled Worker candidates out of 110. Enter your details to see your
+          points and how they add up.
+        </p>
+      </div>
 
       <div className="mt-4">
         <EligibilityBanner eligible={eligibilityResult.eligible} reasons={eligibilityResult.reasons} />
       </div>
 
-      <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="tool-workspace">
         <div className="space-y-5">
           <Section title="Labour market success" help={SASK_DOC}>
             <Field label="Highest level of education or training" help={SASK_DOC}>
@@ -181,7 +185,7 @@ export function SaskatchewanTool() {
               <button
                 type="button"
                 onClick={() => patch({ secondLanguage: { test: 'tef', scores: emptyScores() } })}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+                className="add-language flex w-full items-center justify-center gap-2 text-sm"
               >
                 <span aria-hidden="true">+</span> Add second language test
               </button>
