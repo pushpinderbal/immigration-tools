@@ -22,7 +22,7 @@ const total = () => screen.getByRole('status').textContent
 function fillStandardProfile() {
   fireEvent.change(screen.getByLabelText('Directly related work experience'), { target: { value: '2-3' } })
   fireEvent.change(screen.getByLabelText('Highest level of education'), { target: { value: 'bachelor' } })
-  fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '30' } })
+  fireEvent.change(screen.getByRole('spinbutton', { name: /^Hourly wage/ }), { target: { value: '30' } })
   fireEvent.change(screen.getByLabelText('Area within BC'), { target: { value: 'area-3' } })
   fireEvent.change(screen.getByLabelText('English test'), { target: { value: 'ielts' } })
   for (const a of ['listening', 'reading', 'writing', 'speaking']) {
@@ -33,13 +33,13 @@ function fillStandardProfile() {
 describe('BcTool', () => {
   it('waits for an answer before showing eligibility', () => {
     renderBc()
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
-    expect(screen.queryByText('You appear eligible')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
+    expect(screen.queryByText('Initial checks passed')).toBeNull()
     const education = screen.getByLabelText('Highest level of education')
     fireEvent.focus(education)
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
     fireEvent.change(education, { target: { value: 'bachelor' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
   })
 
   it('starts blank with a zero score', () => {
@@ -68,7 +68,7 @@ describe('BcTool', () => {
   it('updates when the hourly wage changes', () => {
     renderBc()
     fillStandardProfile()
-    const wage = screen.getByRole('spinbutton') as HTMLInputElement
+    const wage = screen.getByRole('spinbutton', { name: /^Hourly wage/ }) as HTMLInputElement
     fireEvent.change(wage, { target: { value: '40' } })
     // wage 25 (was 15) → total 83
     expect(total()).toBe('83')
@@ -119,23 +119,23 @@ describe('BcTool eligibility banner', () => {
   it('shows the eligible banner for the standard profile', () => {
     renderBc()
     fillStandardProfile()
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 
   it('shows the ineligible banner with reasons when requirements are not met', () => {
     renderBc()
     fillStandardProfile()
     fireEvent.change(screen.getByLabelText('Directly related work experience'), { target: { value: 'none' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
     expect(screen.getByText(/at least two years of full-time/)).toBeTruthy()
   })
 
   it('flags a wage below the minimum income floor', () => {
     renderBc()
     fillStandardProfile()
-    const wage = screen.getByRole('spinbutton') as HTMLInputElement
+    const wage = screen.getByRole('spinbutton', { name: /^Hourly wage/ }) as HTMLInputElement
     fireEvent.change(wage, { target: { value: '10' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
     expect(screen.getByText(/minimum income floor/)).toBeTruthy()
   })
 })

@@ -9,6 +9,7 @@ import { BcTool } from './routes/bc/BcTool'
 import { SaskatchewanTool } from './routes/saskatchewan/SaskatchewanTool'
 import { AlbertaTool } from './routes/alberta/AlbertaTool'
 import { ManitobaTool } from './routes/manitoba/ManitobaTool'
+import { ProgramCoveragePage } from './routes/programs/ProgramCoveragePage'
 import './index.css'
 
 const router = createBrowserRouter([
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'programs', element: <ProgramCoveragePage /> },
       { path: 'crs', element: <CrsTool /> },
       { path: 'oinp', element: <OinpTool /> },
       { path: 'bc', element: <BcTool /> },

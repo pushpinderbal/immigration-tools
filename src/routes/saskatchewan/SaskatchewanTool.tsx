@@ -27,6 +27,7 @@ const SASK_DOC =
 
 const EDUCATION_OPTIONS: ReadonlyArray<{ value: EducationLevel | ''; label: string }> = [
   { value: '', label: 'Select...' },
+  { value: 'none', label: 'No qualifying credential or trade certification' },
   { value: 'masters-doctorate', label: "Master's degree or doctorate" },
   { value: 'bachelor', label: "Bachelor's degree or 3+ year degree" },
   { value: 'trade', label: 'Trade certification (journeyperson)' },
@@ -58,11 +59,12 @@ const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
 const FRENCH_TESTS = ['tef', 'tcf'] as const
 
 interface SinpUiState {
+  firstOfficialLanguage: 'english' | 'french'
   education: EducationLevel | ''
   work: string
   priorWork: string
   age: number
-  english: LanguageTestState
+  firstLanguage: LanguageTestState
   secondLanguage: LanguageTestState
   subCategory: SubCategory
   family: boolean
@@ -72,11 +74,12 @@ interface SinpUiState {
 }
 
 const DEFAULT_UI: SinpUiState = {
+  firstOfficialLanguage: 'english',
   education: '',
   work: '',
   priorWork: '',
   age: 17,
-  english: { test: 'none', scores: emptyScores() },
+  firstLanguage: { test: 'none', scores: emptyScores() },
   secondLanguage: { test: 'none', scores: emptyScores() },
   subCategory: 'oid-ee',
   family: false,
@@ -86,10 +89,10 @@ const DEFAULT_UI: SinpUiState = {
 }
 
 function buildInput(ui: SinpUiState): SinpInput {
-  const firstLanguageClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
+  const firstLanguageClb = overallClb(convertTestToClb(ui.firstLanguage.test, ui.firstLanguage.scores))
   const secondLanguageClb = overallClb(convertTestToClb(ui.secondLanguage.test, ui.secondLanguage.scores))
   return {
-    education: (ui.education === '' ? 'certificate' : ui.education) as EducationLevel,
+    education: (ui.education === '' ? 'none' : ui.education) as EducationLevel,
     workYears: Number(ui.work) || 0,
     priorWorkYears: Number(ui.priorWork) || 0,
     age: ui.age,
@@ -141,6 +144,12 @@ export function SaskatchewanTool() {
 
       <div className="tool-workspace">
         <FormSections>
+          <Note>
+            Grid checked October 28, 2026. This score covers International Skilled Worker only.
+            Occupation, licensing, funds, Express Entry eligibility and current intake restrictions require separate review.
+            The official years 6 to 10 table lists points for two to five years, with no one-year row;
+            this calculator awards no points for a single year in that older period. Confirm that case with SINP.
+          </Note>
           <Section title="Labour market success" help={SASK_DOC}>
             <Field label="Highest level of education or training" help={SASK_DOC}>
               <Select
@@ -180,25 +189,30 @@ export function SaskatchewanTool() {
           </Section>
 
           <Section title="Language" help={SASK_DOC}>
+            <Field label="First official language" help={SASK_DOC}>
+              <Select ariaLabel="First official language" value={ui.firstOfficialLanguage}
+                onChange={(v) => patch({ firstOfficialLanguage: v as 'english' | 'french', firstLanguage: { test: 'none', scores: emptyScores() }, secondLanguage: { test: 'none', scores: emptyScores() } })}
+                options={[{ value: 'english', label: 'English' }, { value: 'french', label: 'French' }]} />
+            </Field>
             <LanguageTestInputs
-              title="English (first official language)"
-              allowedTests={ENGLISH_TESTS}
-              value={ui.english}
-              onChange={(next) => patch({ english: next })}
+              title={`${ui.firstOfficialLanguage === 'english' ? 'English' : 'French'} (first official language)`}
+              allowedTests={ui.firstOfficialLanguage === 'english' ? ENGLISH_TESTS : FRENCH_TESTS}
+              value={ui.firstLanguage}
+              onChange={(next) => patch({ firstLanguage: next })}
               help={SASK_DOC}
             />
             {ui.secondLanguage.test === 'none' ? (
               <button
                 type="button"
-                onClick={() => patch({ secondLanguage: { test: 'tef', scores: emptyScores() } })}
+                onClick={() => patch({ secondLanguage: { test: ui.firstOfficialLanguage === 'english' ? 'tef' : 'ielts', scores: emptyScores() } })}
                 className="add-language flex w-full items-center justify-center gap-2 text-sm"
               >
                 <span aria-hidden="true">+</span> Add second language test
               </button>
             ) : (
               <LanguageTestInputs
-                title="French (second official language)"
-                allowedTests={FRENCH_TESTS}
+                title={`${ui.firstOfficialLanguage === 'english' ? 'French' : 'English'} (second official language)`}
+                allowedTests={ui.firstOfficialLanguage === 'english' ? FRENCH_TESTS : ENGLISH_TESTS}
                 value={ui.secondLanguage}
                 onChange={(next) => patch({ secondLanguage: next })}
                 help={SASK_DOC}

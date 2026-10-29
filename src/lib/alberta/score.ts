@@ -2,18 +2,13 @@
  * AAIP Worker EOI scoring - Alberta Advantage Immigration Program.
  *
  * Source: Government of Alberta "Worker Stream Expression of Interest (EOI)
- * Points Grid" (updated August 7, 2025)
+ * Points Grid" (updated September 28, 2026)
  * https://www.alberta.ca/system/files/im-worker-stream-expression-of-interest-points-grid.pdf
  * See also: https://www.alberta.ca/how-to-apply-to-aaip-worker-streams
  *
- * Eligibility: AAIP worker streams each set minimum eligibility criteria. The
- * common requirements derivable from the form (a full-time Alberta job offer, a
- * minimum language score, and minimum work experience) are implemented in
- * `eligibility`. Stream eligibility pages reviewed 2026-09-07:
- * https://www.alberta.ca/aaip-alberta-opportunity-stream-eligibility
- * https://www.alberta.ca/aaip-alberta-express-entry-stream-eligibility
- * https://www.alberta.ca/aaip-rural-renewal-stream-eligibility
- * https://www.alberta.ca/tourism-and-hospitality-stream-eligibility
+ * The grid was rechecked 2026-10-28 against the September 28, 2026 edition.
+ * `eligibility` checks the WEOI language minimum only. A stream must still be
+ * selected and its full requirements verified before registration.
  */
 
 export type EducationLevel = 'doctorate' | 'masters' | 'bachelor' | 'trades' | 'diploma' | 'secondary'
@@ -69,7 +64,6 @@ export interface Eligibility {
 }
 
 export const AB_MIN_CLB = 4
-export const AB_MIN_EXPERIENCE_MONTHS = 12
 
 export const AB_DOC = 'https://www.alberta.ca/how-to-apply-to-aaip-worker-streams'
 
@@ -192,14 +186,16 @@ export function albertaScore(input: AlbertaInput): AlbertaBreakdown {
     Math.max(englishLanguagePoints(input.englishClb), frenchLanguagePoints(input.frenchClb)) +
     bilingualPoints(input.englishClb, input.frenchClb, input.bilingual)
 
-  const experience = totalExperiencePoints(input.totalExperience) + canadianExperiencePoints(input.canadianExperience)
+  const experience = totalExperiencePoints(input.totalExperience) +
+    (input.totalExperience === 'less-6' ? 0 : canadianExperiencePoints(input.canadianExperience))
 
   const age = agePoints(input.age)
 
   const family = input.familyConnection ? 8 : 0
   const jobOffer = jobOfferPoints(input.permanentJobOffer, input.sectorJobOffer)
-  const location = jobLocationPoints(input.jobLocation)
-  const regulated = input.regulatedOccupation ? 10 : 0
+  const hasJobOffer = input.permanentJobOffer || input.sectorJobOffer !== 'none'
+  const location = hasJobOffer ? jobLocationPoints(input.jobLocation) : 0
+  const regulated = hasJobOffer && input.regulatedOccupation ? 10 : 0
 
   return {
     education,
@@ -214,53 +210,11 @@ export function albertaScore(input: AlbertaInput): AlbertaBreakdown {
   }
 }
 
-/**
- * Eligibility determination for AAIP worker streams, separate from points.
- * A candidate can score well yet still fail the minimum eligibility criteria.
- *
- * Derived from the official stream eligibility pages (reviewed 2026-09-07):
- *
- * - A full-time Alberta job offer is required by the Alberta Opportunity,
- *   Rural Renewal and Tourism and Hospitality streams; the Express Entry
- *   stream requires one when invited based on a job offer. The form models
- *   this with `permanentJobOffer` or a select rural or sector job offer.
- * - A minimum language score applies to every stream: CLB/NCLC 5 for NOC
- *   TEER 0-3 and CLB/NCLC 4 for TEER 4-5 in the Opportunity and Rural Renewal
- *   streams, and CLB/NCLC 4 in the Tourism and Hospitality stream. The tool
- *   does not collect a NOC, so the common floor of CLB 4 is enforced.
- * - Minimum work experience: 12 months full-time within the last 18 months
- *   (Alberta) or 24 months within the last 30 (Canada or abroad) for the
- *   Opportunity stream, 12 months for Rural Renewal, and 6 consecutive months
- *   for Tourism and Hospitality. The form can distinguish the Tourism and
- *   Hospitality offer, so its 6-month floor is applied when that option is
- *   selected; the generic worker-stream floor remains 12 months.
- */
+/** WEOI language floor, not a determination of eligibility for an AAIP stream. */
 export function eligibility(input: AlbertaInput): Eligibility {
   const reasons: string[] = []
-
-  const hasJobOffer = input.permanentJobOffer || input.sectorJobOffer !== 'none'
-  if (!hasJobOffer) {
-    reasons.push(
-      'AAIP worker streams require a full-time job offer or employment contract from an Alberta employer.',
-    )
-  }
-
   if (Math.max(input.englishClb, input.frenchClb) < AB_MIN_CLB) {
-    reasons.push(`AAIP worker streams require a minimum of CLB ${AB_MIN_CLB} overall in English or French.`)
+    reasons.push(`Submitting a Worker EOI requires at least CLB ${AB_MIN_CLB} in English or NCLC ${AB_MIN_CLB} in French across all four abilities.`)
   }
-
-  const minimumExperienceMet =
-    input.sectorJobOffer === 'tourism-hospitality'
-      ? input.totalExperience !== 'less-6'
-      : input.totalExperience === 'over-12'
-
-  if (!minimumExperienceMet) {
-    reasons.push(
-      input.sectorJobOffer === 'tourism-hospitality'
-        ? 'The Tourism and Hospitality Stream requires at least 6 consecutive months of eligible work experience.'
-        : `AAIP worker streams require a minimum of ${AB_MIN_EXPERIENCE_MONTHS} months of full-time work experience.`,
-    )
-  }
-
   return { eligible: reasons.length === 0, reasons }
 }

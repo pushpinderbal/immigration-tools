@@ -143,7 +143,7 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
     push(
       'canadian-work',
       'Add a year of Canadian work',
-      'Gain one more year of skilled work in Canada. Canadian experience raises both your core score and your skill transferability.',
+      'Gain one more year of qualifying skilled work in Canada. Its effect depends on your scoring rules, job offer and skill transferability.',
       pointGain(baseTotal, withChanges(input, { canadianWorkYears: (input.canadianWorkYears + 1) as WorkYears })),
     )
   }
@@ -224,7 +224,7 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
     push(
       'age-warning',
       'Apply before your next birthday',
-      `Your score drops by ${lost} point${lost === 1 ? '' : 's'} when you turn ${input.age + 1}. Submit your Express Entry profile before that birthday to keep the age points you have now.`,
+      `Your score drops by ${lost} point${lost === 1 ? '' : 's'} when you turn ${input.age + 1}. Creating a profile does not lock in your age points.`,
       lost,
     )
   }

@@ -194,6 +194,9 @@ export function ToolTiles({ current }: { current?: string }) {
                 </Link>
               )
             })}
+            <Link to="/programs" className="tool-menu-link text-accent" onClick={() => setOpen(false)}>
+              Program coverage and official guides
+            </Link>
           </nav>
         )}
       </div>

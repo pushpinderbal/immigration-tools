@@ -1,10 +1,10 @@
 /**
  * OINP EOI scoring - Ontario Workforce Priority stream.
  *
- * Source: Ontario.ca "Ontario Workforce Priority stream" (updated 2026-08-11)
+ * Source: Ontario.ca "Ontario Workforce Priority stream" (earnings updated 2026-10-05, checked 2026-10-28)
  * https://www.ontario.ca/page/ontario-workforce-priority-stream
  *
- * Revalidated 2026-09-07 against the current official grid. The Workforce
+ * Revalidated 2026-10-28 against the current official grid. The Workforce
  * Priority stream is Ontario's single active OINP stream (all eight former
  * streams closed June 26, 2026). Field of study and location of study are NOT
  * scored. The "1 official language" bilingualism points require CLB/NCLC 6 in
@@ -29,9 +29,9 @@ export type NocBroadCategory = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 export type TenureBand = 'over-24' | '13-24' | '6-12' | 'less-6'
 
-export type EarningsBand = 'over-70k' | '50k-70k' | '30k-50k' | 'under-30k'
+export type EarningsBand = '80k-plus' | 'over-70k' | '50k-70k' | '30k-50k' | 'under-30k'
 
-export type LegalStatus = 'work-permit' | 'study-permit' | 'none'
+export type LegalStatus = 'work-permit' | 'study-permit' | 'visitor' | 'outside-canada' | 'none'
 
 export type EducationLevel =
   | 'doctorate'
@@ -49,8 +49,16 @@ export type CanadianCredentials = 'none' | 'one' | 'multiple'
 export type Region = 'northern' | 'eastern' | 'central' | 'southwestern' | 'gta-except-toronto' | 'toronto'
 
 export interface OinpInput {
+  pathway?: 'job-offer' | 'physician'
+  physicianRequirementsMet?: boolean
+  /** Exact qualifying months for thresholds falling inside scoring bands. */
+  positionMonths?: number
+  twoYearsSameNoc?: boolean
+  licensedForPosition?: boolean
+  transportOccupation?: boolean
+  listedSkilledTrade?: boolean
   teer: TeerCategory
-  nocBroad: NocBroadCategory
+  nocBroad: NocBroadCategory | null
   hourlyWage: number
   tenureInPosition: TenureBand
   ontarioWork: TenureBand
@@ -85,11 +93,12 @@ export interface Eligibility {
   reasons: string[]
 }
 
-export const MAX_LABOUR = 70
+export const MAX_LABOUR = 72
 export const MAX_EDUCATION = 20
 export const MAX_LANGUAGE = 25
 export const MAX_REGION = 15
-export const MAX_TOTAL = 130
+export const MAX_TOTAL = 132
+export const MAX_PHYSICIAN_TOTAL = 117
 
 export function teerPoints(teer: TeerCategory): number {
   if (teer <= 1) return 9
@@ -97,7 +106,8 @@ export function teerPoints(teer: TeerCategory): number {
   return 0
 }
 
-export function nocBroadPoints(noc: NocBroadCategory): number {
+export function nocBroadPoints(noc: NocBroadCategory | null): number {
+  if (noc === null) return 0
   switch (noc) {
     case 3:
       return 10
@@ -159,6 +169,8 @@ export function workExperiencePoints(tenureInPosition: TenureBand, ontarioWork: 
 
 export function earningsPoints(band: EarningsBand): number {
   switch (band) {
+    case '80k-plus':
+      return 10
     case 'over-70k':
       return 8
     case '50k-70k':
@@ -176,6 +188,8 @@ export function legalStatusPoints(status: LegalStatus): number {
       return 10
     case 'study-permit':
       return 5
+    case 'visitor':
+    case 'outside-canada':
     case 'none':
       return 0
   }
@@ -242,11 +256,12 @@ export function regionPoints(region: Region): number {
 }
 
 export function oinpScore(input: OinpInput): OinpBreakdown {
+  const physician = input.pathway === 'physician'
   const labour =
-    teerPoints(input.teer) +
-    nocBroadPoints(input.nocBroad) +
-    wagePoints(input.hourlyWage) +
-    workExperiencePoints(input.tenureInPosition, input.ontarioWork) +
+    teerPoints(physician ? 1 : input.teer) +
+    nocBroadPoints(physician ? 3 : input.nocBroad) +
+    (physician ? 0 : wagePoints(input.hourlyWage)) +
+    (physician ? tenureInPositionPoints(input.ontarioWork) : workExperiencePoints(input.tenureInPosition, input.ontarioWork)) +
     earningsPoints(input.earnings) +
     legalStatusPoints(input.legalStatus)
 
@@ -261,35 +276,34 @@ export function oinpScore(input: OinpInput): OinpBreakdown {
   return { labour, education, language, region, total: labour + education + language + region }
 }
 
-/**
- * Eligibility determination for the Ontario Workforce Priority stream.
- *
- * Points alone do not guarantee nomination. A candidate must also meet the
- * stream's work experience and legal status requirements. Because the tenure
- * bands are coarse, a band that only partially satisfies a threshold (such as
- * '6-12' against the 9 month rule for TEER 4-5) is treated as not meeting it
- * rather than assuming the user is in the qualifying sub-range.
- */
+/** Initial checks only; employer, education, licensing and job-offer requirements also apply. */
 export function eligibility(input: OinpInput): Eligibility {
   const reasons: string[] = []
-
-  if (input.teer >= 4) {
-    if (input.tenureInPosition === 'less-6' || input.tenureInPosition === '6-12') {
-      reasons.push(
-        'TEER 4 and 5 job offers require at least 9 months of cumulative full-time work experience in the job offer position, gained within 2 years before you apply.',
-      )
+  if (input.pathway === 'physician') {
+    if (!input.physicianRequirementsMet) {
+      reasons.push('Self-employed physicians need an OHIP billing number and an eligible CPSO certificate in good standing (independent, academic or provisional practice).')
     }
-  } else if (!input.recentOntarioGraduate && input.tenureInPosition === 'less-6') {
-    reasons.push(
-      'TEER 0 to 3 job offers require at least 6 months of consecutive full-time work experience in the job offer position, gained within 12 months before you apply.',
-    )
+    return { eligible: reasons.length === 0, reasons }
+  }
+
+  const months = input.positionMonths ?? {
+    'less-6': 0, '6-12': 6, '13-24': 13, 'over-24': 25,
+  }[input.tenureInPosition]
+  const minimum = input.teer >= 4 ? 9 : input.transportOccupation ? 6 : input.recentOntarioGraduate ? 3 : 6
+  const alternative = input.teer <= 3 && !input.transportOccupation &&
+    (input.twoYearsSameNoc || input.licensedForPosition)
+  if (months < minimum && !alternative) {
+    reasons.push(input.teer >= 4
+      ? 'TEER 4 and 5 job offers require at least 9 months of cumulative full-time work experience in the job offer position, gained within 2 years before you apply.'
+      : `TEER 0 to 3 job offers require at least ${minimum} months of consecutive full-time work experience in the job offer position within the last year, or a permitted alternative where applicable.`)
   }
 
   if (input.legalStatus === 'none') {
-    reasons.push(
-      'You must have valid legal status in Canada, such as a valid work permit or study permit, at the time you apply.',
-    )
+    reasons.push('You must have valid legal status in Canada when applying from within Canada. A visitor record or maintained status may qualify; applicants outside Canada do not need Canadian temporary status.')
   }
-
+  const minimumClb = input.teer >= 4 ? 4 : input.listedSkilledTrade ? 5 : 6
+  if (!(input.teer <= 3 && input.recentOntarioGraduate) && Math.max(input.englishClb, input.frenchClb) < minimumClb) {
+    reasons.push(`Your job offer requires at least CLB/NCLC ${minimumClb} across all four abilities, unless an applicable recent Ontario graduate exemption is met.`)
+  }
   return { eligible: reasons.length === 0, reasons }
 }

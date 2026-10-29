@@ -68,6 +68,12 @@ const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
 const FRENCH_TESTS = ['tef', 'tcf'] as const
 
 interface BcUiState {
+  jobNoc: string
+  otherSkilledExperience: boolean
+  familySize: string
+  weeklyHours: string
+  incomeArea: AreaBand
+  spouseAnnualIncome: string
   workExperience: WorkExperienceBand | ''
   canadianExperience: boolean
   workingInBc: boolean
@@ -83,6 +89,12 @@ interface BcUiState {
 }
 
 const DEFAULT_UI: BcUiState = {
+  jobNoc: '',
+  otherSkilledExperience: false,
+  familySize: '1',
+  weeklyHours: '40',
+  incomeArea: 'area-1',
+  spouseAnnualIncome: '',
   workExperience: '',
   canadianExperience: false,
   workingInBc: false,
@@ -105,6 +117,12 @@ export function BcTool() {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
     const frenchClb = overallClb(convertTestToClb(ui.french.test, ui.french.scores))
     const input: BcInput = {
+      jobNoc: ui.jobNoc,
+      skilledWorkExperience: ui.otherSkilledExperience || ['2-3', '3-4', '4-5', '5-plus'].includes(ui.workExperience),
+      familySize: Number(ui.familySize) || 1,
+      weeklyHours: Number(ui.weeklyHours) || 0,
+      incomeArea: ui.incomeArea,
+      spouseAnnualIncome: Number(ui.spouseAnnualIncome) || 0,
       workExperience: (ui.workExperience === '' ? 'none' : ui.workExperience) as WorkExperienceBand,
       canadianExperience: ui.canadianExperience,
       workingInBc: ui.workingInBc,
@@ -151,6 +169,27 @@ export function BcTool() {
 
       <div className="tool-workspace">
         <FormSections>
+          <Section title="Initial Skilled Worker checks" help={BC_DOC}>
+            <Note>Guide checked October 28, 2026 (effective June 10). These checks cover the Skilled Worker stream. Employer support, occupational wages and other stream requirements also apply. Invitations may target wages or other attributes separately from the registration score.</Note>
+            <Field label="Job offer NOC code" help={BC_DOC}>
+              <input aria-label="Job offer NOC code" inputMode="numeric" maxLength={5} className="control h-11 w-full px-3"
+                value={ui.jobNoc} onChange={(e) => patch({ jobNoc: e.target.value.replace(/[^0-9]/g, '') })} />
+            </Field>
+            <CheckRow label="I have two years of qualifying skilled work beyond the directly related experience entered below"
+              checked={ui.otherSkilledExperience} onChange={(v) => patch({ otherSkilledExperience: v })} help={BC_DOC} />
+            <NumberInput label="Family size (7 for 7 or more)" min={1} max={7} step={1} value={ui.familySize}
+              onChange={(v) => patch({ familySize: v })} help={BC_DOC} />
+            <Field label="Area of residence for family income" help={BC_DOC}>
+              <Select ariaLabel="Area of residence for family income" value={ui.incomeArea}
+                onChange={(v) => patch({ incomeArea: v as AreaBand })}
+                options={[{ value: 'area-1', label: 'Metro Vancouver' }, { value: 'area-3', label: 'Rest of B.C.' }]} />
+            </Field>
+            <NumberInput label="Weekly paid hours (maximum 40 counted)" min={30} max={40} value={ui.weeklyHours}
+              onChange={(v) => patch({ weeklyHours: v })} help={BC_DOC} />
+            <NumberInput label="Eligible spouse annual B.C. wages" min={0} value={ui.spouseAnnualIncome}
+              onChange={(v) => patch({ spouseAnnualIncome: v })} help={BC_DOC} />
+            <Note>Include your spouse and dependent children as defined in section 3.10. Spouse wages count only when they currently work in B.C. with valid work authorization. Family income affects these checks, not registration points. Occupational wage requirements apply independently.</Note>
+          </Section>
           <Section title="Work experience" help={BC_DOC}>
             <Field label="Directly related work experience" help={BC_DOC}>
               <Select

@@ -23,7 +23,7 @@ import {
 import type { ManitobaBreakdown, ManitobaEducation, ManitobaInput } from '../../lib/manitoba/score'
 
 const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const SECOND_LANGUAGE_TESTS = ['ielts', 'celpip', 'pte', 'tef', 'tcf'] as const
+const FRENCH_TESTS = ['tef', 'tcf'] as const
 
 const WORK_YEARS_OPTIONS = [
   { value: '', label: 'Select...' },
@@ -46,7 +46,9 @@ const EDUCATION_OPTIONS: ReadonlyArray<{ value: ManitobaEducation | ''; label: s
 ]
 
 interface ManitobaUiState {
-  english: LanguageTestState
+  firstOfficialLanguage: 'english' | 'french'
+  occupationTeer: string
+  firstLanguage: LanguageTestState
   hasSecondLanguage: boolean
   secondLanguage: LanguageTestState
   age: number
@@ -66,7 +68,9 @@ interface ManitobaUiState {
 }
 
 const DEFAULT_UI: ManitobaUiState = {
-  english: { test: 'none', scores: emptyScores() },
+  firstOfficialLanguage: 'english',
+  occupationTeer: '',
+  firstLanguage: { test: 'none', scores: emptyScores() },
   hasSecondLanguage: false,
   secondLanguage: { test: 'none', scores: emptyScores() },
   age: 18,
@@ -90,10 +94,11 @@ export function ManitobaTool() {
   const [hasStarted, setHasStarted] = useState(false)
 
   const input = useMemo<ManitobaInput>(() => {
-    const englishClbs = convertTestToClb(ui.english.test, ui.english.scores)
+    const firstLanguageClbs = convertTestToClb(ui.firstLanguage.test, ui.firstLanguage.scores)
     const secondClb = overallClb(convertTestToClb(ui.secondLanguage.test, ui.secondLanguage.scores))
     return {
-      firstLanguageClbs: englishClbs,
+      occupationTeer: (ui.occupationTeer === '' ? 4 : Number(ui.occupationTeer)) as ManitobaInput['occupationTeer'],
+      firstLanguageClbs,
       secondLanguage: ui.hasSecondLanguage && secondClb >= 5,
       age: ui.age,
       workYears: Number(ui.workYears) || 0,
@@ -128,7 +133,7 @@ export function ManitobaTool() {
   }
 
   const addSecondLanguage = () => {
-    patch({ secondLanguage: { test: 'tef', scores: emptyScores() } })
+    patch({ secondLanguage: { test: ui.firstOfficialLanguage === 'english' ? 'tef' : 'ielts', scores: emptyScores() } })
   }
 
   return (
@@ -157,11 +162,21 @@ export function ManitobaTool() {
       <div className="tool-workspace">
         <FormSections>
           <Section title="Language" help={MB_LANGUAGE_DOC}>
+            <Field label="First official language" help={MB_LANGUAGE_DOC}>
+              <Select ariaLabel="First official language" value={ui.firstOfficialLanguage}
+                onChange={(v) => patch({ firstOfficialLanguage: v as 'english' | 'french', firstLanguage: { test: 'none', scores: emptyScores() }, secondLanguage: { test: 'none', scores: emptyScores() }, hasSecondLanguage: false })}
+                options={[{ value: 'english', label: 'English' }, { value: 'french', label: 'French' }]} />
+            </Field>
+            <Field label="Occupation TEER (language requirement)" help={MB_LANGUAGE_DOC}>
+              <Select ariaLabel="Occupation TEER (language requirement)" value={ui.occupationTeer}
+                onChange={(v) => patch({ occupationTeer: v })}
+                options={[{ value: '', label: 'Select...' }, { value: '0', label: 'TEER 0 to 3' }, { value: '4', label: 'TEER 4 or 5' }]} />
+            </Field>
             <LanguageTestInputs
-              title="English (first official language)"
-              allowedTests={ENGLISH_TESTS}
-              value={ui.english}
-              onChange={(next) => patch({ english: next })}
+              title={`${ui.firstOfficialLanguage === 'english' ? 'English' : 'French'} (first official language)`}
+              allowedTests={ui.firstOfficialLanguage === 'english' ? ENGLISH_TESTS : FRENCH_TESTS}
+              value={ui.firstLanguage}
+              onChange={(next) => patch({ firstLanguage: next })}
               help={MB_LANGUAGE_DOC}
             />
             <CheckRow
@@ -181,7 +196,7 @@ export function ManitobaTool() {
             ) : (
               <LanguageTestInputs
                 title="Second official language"
-                allowedTests={SECOND_LANGUAGE_TESTS}
+                allowedTests={ui.firstOfficialLanguage === 'english' ? FRENCH_TESTS : ENGLISH_TESTS}
                 value={ui.secondLanguage}
                 onChange={(next) => patch({ secondLanguage: next })}
                 help={MB_LANGUAGE_DOC}
@@ -285,7 +300,7 @@ export function ManitobaTool() {
             <Note>Manitoba demand is capped at 500 points.</Note>
             <p className="text-sm font-medium text-ink">Regional development</p>
             <CheckRow
-              label="Immigration destination in Manitoba outside Winnipeg"
+              label="Existing connection to a community outside the Manitoba Capital Region"
               checked={ui.regionalDevelopmentOutsideWinnipeg}
               onChange={(v) => patch({ regionalDevelopmentOutsideWinnipeg: v })}
               help={MB_DOC}
@@ -314,8 +329,9 @@ export function ManitobaTool() {
           </Section>
 
           <Note>
-            These points rank you in the MPNP pool. Entering the pool also requires a separate minimum score of 60
-            out of 100 on Manitoba's eligibility grid, which this calculator does not compute.
+            Grid checked October 28, 2026. The 60-out-of-100 assessment applies to Skilled Worker Overseas and is
+            calculated separately from this ranking score. Ongoing Manitoba employment with a long-term offer is
+            checked as a Skilled Worker in Manitoba profile. Employer, occupation and settlement requirements still apply.
           </Note>
         </FormSections>
 

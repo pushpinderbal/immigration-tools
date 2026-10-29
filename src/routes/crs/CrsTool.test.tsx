@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CrsTool } from '../../routes/crs/CrsTool'
 
 vi.mock('../../components/DrawFeed', () => ({ DrawFeed: () => null }))
 
-afterEach(cleanup)
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-10-28T12:00:00-04:00'))
+})
+afterEach(() => { cleanup(); vi.useRealTimers() })
 
 function renderCrs() {
   return render(
@@ -29,6 +33,41 @@ function fillStandardProfile() {
 }
 
 describe('CrsTool', () => {
+  it('previews a qualifying high-wage offer without adding it to Canadian work points', () => {
+    renderCrs()
+    fillStandardProfile()
+    fireEvent.change(screen.getByLabelText('Canadian work experience'), { target: { value: '1' } })
+    expect(total()).toBe('359')
+    fireEvent.change(screen.getByLabelText('Scoring rules'), { target: { value: 'from-2026-11-03' } })
+    fireEvent.change(screen.getByLabelText('Job offer occupation (NOC)'), { target: { value: '10010' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /My offer meets IRCC/ }))
+    expect(total()).toBe('419')
+    fireEvent.change(screen.getByLabelText('Scoring rules'), { target: { value: 'before-2026-11-03' } })
+    expect(total()).toBe('359')
+  })
+
+  it('supports mixed NOC experience and recalculates after removing a period', () => {
+    renderCrs()
+    fillStandardProfile()
+    fireEvent.change(screen.getByLabelText('Canadian work experience'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('Scoring rules'), { target: { value: 'from-2026-11-03' } })
+    fireEvent.click(screen.getByRole('button', { name: /Add Canadian work period/ }))
+    fireEvent.change(screen.getByLabelText('Work occupation 1 (NOC)'), { target: { value: '10010' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /^Qualifying months 1/ }), { target: { value: '6' } })
+    fireEvent.click(screen.getByRole('button', { name: /Add Canadian work period/ }))
+    fireEvent.change(screen.getByLabelText('Work occupation 2 (NOC)'), { target: { value: '21232' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /^Qualifying months 2/ }), { target: { value: '6' } })
+    expect(total()).toBe('399')
+    fireEvent.click(screen.getByRole('button', { name: 'Remove work period 1' }))
+    expect(total()).toBe('359')
+  })
+
+  it('defaults to the November rules once they take effect', () => {
+    vi.setSystemTime(new Date('2026-11-03T12:00:00-05:00'))
+    renderCrs()
+    expect((screen.getByLabelText('Scoring rules') as HTMLSelectElement).value).toBe('from-2026-11-03')
+    expect(screen.getByRole('heading', { name: /Labour market integration/ })).toBeTruthy()
+  })
   it('starts blank with a zero score', () => {
     renderCrs()
     expect(total()).toBe('0')

@@ -92,6 +92,7 @@ describe('OINP Workforce Priority factor points (official grid)', () => {
   })
 
   it('earnings history', () => {
+    expect(earningsPoints('80k-plus')).toBe(10)
     expect(earningsPoints('over-70k')).toBe(8)
     expect(earningsPoints('50k-70k')).toBe(6)
     expect(earningsPoints('30k-50k')).toBe(4)
@@ -154,14 +155,14 @@ describe('OINP Workforce Priority factor points (official grid)', () => {
 })
 
 describe('OINP total', () => {
-  it('maximized profile scores the full 130', () => {
+  it('maximized profile includes the October 5 earnings tier', () => {
     const score = oinpScore(
       base({
         teer: 0,
         nocBroad: 3,
         hourlyWage: 45,
         tenureInPosition: 'over-24',
-        earnings: 'over-70k',
+        earnings: '80k-plus',
         education: 'doctorate',
         canadianCredentials: 'multiple',
         englishClb: 9,
@@ -169,7 +170,7 @@ describe('OINP total', () => {
         region: 'northern',
       }),
     )
-    expect(score).toEqual({ labour: 70, education: 20, language: 25, region: 15, total: 130 })
+    expect(score).toEqual({ labour: 72, education: 20, language: 25, region: 15, total: 132 })
   })
 
   it('typical mid profile', () => {
@@ -223,52 +224,42 @@ describe('OINP total', () => {
   })
 })
 
-describe('OINP Workforce Priority eligibility (official requirements)', () => {
-  it('flags the default profile as eligible', () => {
+describe('OINP Workforce Priority initial checks', () => {
+  it('accepts a standard job-offer profile', () => {
     expect(eligibility(base())).toEqual({ eligible: true, reasons: [] })
   })
-
-  it('allows a recent Ontario graduate with under 6 months in the job offer position', () => {
-    const result = eligibility(base({ recentOntarioGraduate: true, tenureInPosition: 'less-6' }))
-    expect(result.eligible).toBe(true)
-    expect(result.reasons).toEqual([])
+  it('requires three actual months for a recent graduate, rather than accepting every under-six-month profile', () => {
+    expect(eligibility(base({ recentOntarioGraduate: true, tenureInPosition: 'less-6', positionMonths: 2 })).eligible).toBe(false)
+    expect(eligibility(base({ recentOntarioGraduate: true, tenureInPosition: 'less-6', positionMonths: 3 })).eligible).toBe(true)
   })
-
-  it('flags under 6 months in the position as ineligible for a TEER 0-3 job offer', () => {
-    const result = eligibility(base({ tenureInPosition: 'less-6' }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons).toEqual([
-      'TEER 0 to 3 job offers require at least 6 months of consecutive full-time work experience in the job offer position, gained within 12 months before you apply.',
-    ])
+  it('distinguishes eight and nine months inside the same TEER 4-5 scoring band', () => {
+    expect(eligibility(base({ teer: 4, positionMonths: 8 })).eligible).toBe(false)
+    expect(eligibility(base({ teer: 4, positionMonths: 9 })).eligible).toBe(true)
   })
-
-  it('flags a TEER 4 or 5 job offer with under 9 months in the position as ineligible', () => {
-    const result = eligibility(base({ teer: 4, tenureInPosition: '6-12' }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons).toEqual([
-      'TEER 4 and 5 job offers require at least 9 months of cumulative full-time work experience in the job offer position, gained within 2 years before you apply.',
-    ])
+  it('allows the permitted experience alternatives, with the transport exception', () => {
+    expect(eligibility(base({ tenureInPosition: 'less-6', twoYearsSameNoc: true })).eligible).toBe(true)
+    expect(eligibility(base({ tenureInPosition: 'less-6', licensedForPosition: true })).eligible).toBe(true)
+    expect(eligibility(base({ tenureInPosition: 'less-6', licensedForPosition: true, transportOccupation: true })).eligible).toBe(false)
   })
-
-  it('accepts a TEER 4 or 5 job offer with 13 months or more in the position', () => {
-    const result = eligibility(base({ teer: 5, tenureInPosition: '13-24' }))
-    expect(result.eligible).toBe(true)
-    expect(result.reasons).toEqual([])
+  it('accepts visitor status and overseas applicants without awarding permit points', () => {
+    expect(eligibility(base({ legalStatus: 'visitor' })).eligible).toBe(true)
+    expect(eligibility(base({ legalStatus: 'outside-canada' })).eligible).toBe(true)
+    expect(legalStatusPoints('visitor')).toBe(0)
+    expect(eligibility(base({ legalStatus: 'none' })).eligible).toBe(false)
   })
-
-  it('flags a candidate without valid legal status in Canada', () => {
-    const result = eligibility(base({ legalStatus: 'none' }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons).toEqual([
-      'You must have valid legal status in Canada, such as a valid work permit or study permit, at the time you apply.',
-    ])
+  it('applies language floors for each job-offer route and the graduate exemption', () => {
+    expect(eligibility(base({ englishClb: 5 })).eligible).toBe(false)
+    expect(eligibility(base({ englishClb: 5, listedSkilledTrade: true })).eligible).toBe(true)
+    expect(eligibility(base({ englishClb: 0, recentOntarioGraduate: true })).eligible).toBe(true)
+    expect(eligibility(base({ teer: 4, positionMonths: 9, englishClb: 4 })).eligible).toBe(true)
   })
-
-  it('lists every unmet requirement as a separate reason', () => {
-    const result = eligibility(base({ tenureInPosition: 'less-6', legalStatus: 'none' }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons).toHaveLength(2)
-    expect(result.reasons[0]).toMatch(/at least 6 months/)
-    expect(result.reasons[1]).toMatch(/legal status/)
+  it('scores physicians on cumulative Ontario practice without wage points', () => {
+    const input = base({ pathway: 'physician', physicianRequirementsMet: true, teer: 5, nocBroad: 6,
+      ontarioWork: 'over-24', tenureInPosition: 'less-6', hourlyWage: 100, earnings: '80k-plus',
+      education: 'doctorate', canadianCredentials: 'multiple', englishClb: 9, frenchClb: 9, region: 'northern' })
+    expect(oinpScore(input).total).toBe(117)
+    expect(eligibility(input).eligible).toBe(true)
+    expect(eligibility({ ...input, physicianRequirementsMet: false }).eligible).toBe(false)
+    expect(oinpScore({ ...input, ontarioWork: '6-12' }).labour).toBe(oinpScore(input).labour - 6)
   })
 })

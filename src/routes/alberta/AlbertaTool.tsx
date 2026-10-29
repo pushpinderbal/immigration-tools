@@ -5,7 +5,7 @@ import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { FormSections, CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
+import { FormSections, Note, CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
 import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
@@ -170,6 +170,11 @@ export function AlbertaTool() {
 
       <div className="tool-workspace">
         <FormSections>
+          <Note>
+            Points grid checked October 28, 2026 (September 28, 2026 edition). The check above covers only the
+            Worker EOI language minimum. Job offers and experience requirements vary by stream. Confirm eligibility
+            for at least one AAIP stream before registering. Wages and work hours can affect selection but add no grid points.
+          </Note>
           <Section title="Human capital" help={AB_DOC}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Highest level of education" help={AB_DOC}>

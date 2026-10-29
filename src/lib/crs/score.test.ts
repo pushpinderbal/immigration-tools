@@ -394,7 +394,7 @@ describe('worked examples', () => {
     expect(transferabilityPoints(input)).toBe(50)
     // Additional: Canadian study = 30
     expect(additionalPoints(input)).toBe(30)
-    expect(crsScore(input)).toEqual({ core: 418, spouse: 0, transferability: 50, additional: 30, total: 498 })
+    expect(crsScore(input)).toEqual({ labourMarketIntegration: 0, core: 418, spouse: 0, transferability: 50, additional: 30, total: 498 })
   })
 
   it('same but adds 1 year foreign work (2 yr Canadian work)', () => {
@@ -425,7 +425,7 @@ describe('worked examples', () => {
     expect(coreHumanCapitalPoints(input)).toBe(433)
     // Transferability: master + CLB 9 = 50
     expect(transferabilityPoints(input)).toBe(50)
-    expect(crsScore(input)).toEqual({ core: 433, spouse: 0, transferability: 50, additional: 600, total: 1083 })
+    expect(crsScore(input)).toEqual({ labourMarketIntegration: 0, core: 433, spouse: 0, transferability: 50, additional: 600, total: 1083 })
   })
 
   it('with accompanying spouse, all factors maxed', () => {

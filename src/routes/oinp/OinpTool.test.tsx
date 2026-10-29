@@ -22,7 +22,7 @@ const total = () => screen.getByRole('status').textContent
 function fillStandardProfile() {
   fireEvent.change(screen.getByLabelText('NOC TEER category'), { target: { value: '2' } })
   fireEvent.change(screen.getByLabelText('NOC broad occupational category'), { target: { value: '0' } })
-  fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '30' } })
+  fireEvent.change(screen.getByRole('spinbutton', { name: /^Hourly wage/ }), { target: { value: '30' } })
   fireEvent.change(screen.getByLabelText('Time in job offer position'), { target: { value: '6-12' } })
   fireEvent.change(screen.getByLabelText('Highest yearly earnings'), { target: { value: '30k-50k' } })
   fireEvent.change(screen.getByLabelText('Legal status in Canada'), { target: { value: 'work-permit' } })
@@ -36,20 +36,32 @@ function fillStandardProfile() {
 }
 
 describe('OinpTool', () => {
+  it('adds the October 5 earnings tier and supports self-employed physicians', () => {
+    renderOinp()
+    fillStandardProfile()
+    fireEvent.change(screen.getByLabelText('Highest yearly earnings'), { target: { value: '80k-plus' } })
+    expect(total()).toBe('86')
+    fireEvent.change(screen.getByLabelText('Application pathway'), { target: { value: 'physician' } })
+    fireEvent.change(screen.getByLabelText('Time working in Ontario'), { target: { value: '6-12' } })
+    expect(total()).toBe('85')
+    expect(screen.queryByRole('spinbutton', { name: /^Hourly wage/ })).toBeNull()
+    fireEvent.click(screen.getByRole('checkbox', { name: /OHIP billing number/ }))
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
+  })
   it('waits for an answer before showing eligibility', () => {
     renderOinp()
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
-    expect(screen.queryByText('You appear eligible')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
+    expect(screen.queryByText('Initial checks passed')).toBeNull()
     const education = screen.getByLabelText('Highest level of education')
     fireEvent.focus(education)
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
     fireEvent.change(education, { target: { value: 'bachelor' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
   })
 
   it('starts blank with a near-zero score', () => {
     renderOinp()
-    expect(total()).toBe('4')
+    expect(total()).toBe('0')
   })
 
   it('renders the score for the standard profile', () => {
@@ -78,7 +90,7 @@ describe('OinpTool', () => {
   it('updates when the hourly wage changes', () => {
     renderOinp()
     fillStandardProfile()
-    const wage = screen.getByRole('spinbutton') as HTMLInputElement
+    const wage = screen.getByRole('spinbutton', { name: /^Hourly wage/ }) as HTMLInputElement
     fireEvent.change(wage, { target: { value: '50' } })
     // labour +5 → 85
     expect(total()).toBe('85')
@@ -111,14 +123,14 @@ describe('OinpTool', () => {
   it('shows the eligible banner for the standard profile', () => {
     renderOinp()
     fillStandardProfile()
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 
   it('shows a not eligible banner with reasons when legal status is missing', () => {
     renderOinp()
     fillStandardProfile()
     fireEvent.change(screen.getByLabelText('Legal status in Canada'), { target: { value: 'none' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
     expect(screen.getByText(/must have valid legal status in Canada/)).toBeTruthy()
   })
 
@@ -126,7 +138,7 @@ describe('OinpTool', () => {
     renderOinp()
     fillStandardProfile()
     fireEvent.change(screen.getByLabelText('Time in job offer position'), { target: { value: 'less-6' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
     expect(screen.getByText(/require at least 6 months of consecutive full-time work experience/)).toBeTruthy()
   })
 
@@ -134,8 +146,9 @@ describe('OinpTool', () => {
     renderOinp()
     fillStandardProfile()
     fireEvent.change(screen.getByLabelText('Time in job offer position'), { target: { value: 'less-6' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
     fireEvent.click(screen.getByRole('checkbox', { name: /Recent Ontario graduate/ }))
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
+    fireEvent.change(screen.getByRole('spinbutton', { name: /^Qualifying months/ }), { target: { value: '3' } })
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 })

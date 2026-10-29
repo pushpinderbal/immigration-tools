@@ -32,13 +32,13 @@ function fillStandardProfile() {
 describe('AlbertaTool', () => {
   it('waits for an answer before showing eligibility', () => {
     renderAlberta()
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
-    expect(screen.queryByText('You appear eligible')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
+    expect(screen.queryByText('Initial checks passed')).toBeNull()
     const education = screen.getByLabelText('Highest level of education')
     fireEvent.focus(education)
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
     fireEvent.change(education, { target: { value: 'bachelor' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
   })
 
   it('starts blank with a near-zero score', () => {
@@ -75,8 +75,9 @@ describe('AlbertaTool', () => {
     renderAlberta()
     fillStandardProfile()
     fireEvent.click(screen.getByRole('checkbox', { name: /Regulated occupation/ }))
-    // +10 → 43
-    expect(total()).toBe('43')
+    expect(total()).toBe('33')
+    fireEvent.click(screen.getByRole('checkbox', { name: /Permanent full-time job offer/ }))
+    expect(total()).toBe('53')
   })
 
   it('awards permanent full-time job offer points when the checkbox is checked', () => {
@@ -122,18 +123,17 @@ describe('AlbertaTool', () => {
     expect(total()).toBe('36')
   })
 
-  it('flags the standard profile as not eligible without a job offer', () => {
+  it('checks the WEOI language floor without inventing a universal job-offer requirement', () => {
     renderAlberta()
     fillStandardProfile()
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
-    expect(screen.getByText(/full-time job offer or employment contract/)).toBeTruthy()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 
   it('shows an eligible banner once a permanent full-time job offer is selected', () => {
     renderAlberta()
     fillStandardProfile()
     fireEvent.click(screen.getByRole('checkbox', { name: /Permanent full-time job offer/ }))
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 
   it('shows an eligible banner with a select rural or sector job offer', () => {
@@ -142,6 +142,6 @@ describe('AlbertaTool', () => {
     fireEvent.change(screen.getByLabelText('Job offer to work in select Alberta rural communities or sector'), {
       target: { value: 'rural-renewal' },
     })
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 })
