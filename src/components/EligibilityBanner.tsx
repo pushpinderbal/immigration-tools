@@ -1,38 +1,15 @@
-export function EligibilityBanner({ eligible, reasons }: { eligible: boolean; reasons?: string[] }) {
-  const notes = reasons ?? []
+import { CaretDownIcon, CheckCircleIcon, WarningCircleIcon } from './icons'
 
-  if (eligible) {
-    return (
-      <div className="eligibility-banner is-eligible" aria-live="polite">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="eligibility-icon is-eligible">
-          <circle cx="12" cy="12" r="9" />
-          <path d="m8.5 12.5 2.5 2.5 4.5-5" />
-        </svg>
-        <div>
-          <p className="text-sm font-semibold text-ink">Initial checks passed</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-muted">Based on the information entered. Review all stream requirements before applying.</p>
-          {notes.length > 0 && (
-            <p className="mt-0.5 text-xs leading-relaxed text-muted">{notes.join(' ')}</p>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="eligibility-banner is-ineligible" aria-live="polite">
-      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="eligibility-icon is-ineligible">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 8v4M12 16h.01" />
-      </svg>
-      <div>
-        <p className="text-sm font-semibold text-ink">Requirements to review</p>
-        <ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted">
-          {notes.map((r) => (
-            <li key={r}>{r}</li>
-          ))}
-        </ul>
-      </div>
+export function EligibilityBanner({ eligible, reasons = [] }: { eligible: boolean; reasons?: string[] }) {
+  return <details className={`eligibility-banner ${eligible ? 'is-eligible' : 'is-ineligible'}`}>
+    <summary>
+      {eligible ? <CheckCircleIcon size={17} aria-hidden="true" /> : <WarningCircleIcon size={17} aria-hidden="true" />}
+      <span>{eligible ? 'Initial checks passed' : 'Requirements to review'}</span>
+      {!eligible && <span className="eligibility-count">{reasons.length}</span>}
+      <CaretDownIcon size={13} aria-hidden="true" />
+    </summary>
+    <div><p>Based on the answers entered. Review the full stream requirements before applying.</p>
+      {reasons.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-4">{reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>}
     </div>
-  )
+  </details>
 }

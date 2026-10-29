@@ -58,9 +58,9 @@ export function CanadaMap({
         <div>
           <p className="section-kicker">Explore Canada</p>
           <h2 id="map-title" className="map-card-title mt-2">
-            Where do you see yourself?
+            Choose a province
           </h2>
-          <p className="map-description">Select a highlighted province to estimate your points.</p>
+          <p className="map-description">Highlighted provinces have a calculator.</p>
         </div>
       </div>
 
@@ -129,7 +129,7 @@ export function CanadaMap({
       <p className="map-selection" aria-live="polite">
         {hoveredName
           ? `${hoveredName} · ${PROVINCE_ROUTES[hovered ?? ''] ? 'Open calculator ↗' : 'No calculator available yet'}`
-          : 'Five provinces. A place to start.'}
+          : 'Five provincial calculators available.'}
       </p>
       <div className="map-legend" aria-label="Map legend">
         <span className="map-legend-item">

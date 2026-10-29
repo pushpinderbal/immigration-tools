@@ -1,3 +1,4 @@
+import { ChromeSlot, ToolWorkspace } from '../../components/CalculatorChrome'
 import { useMemo, useState } from 'react'
 import { LanguageTestInputs } from '../../components/LanguageTestInputs'
 import { Recommendations } from '../../components/Recommendations'
@@ -7,7 +8,7 @@ import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { DrawFeed } from '../../components/DrawFeed'
 import { FormSections, CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
-import { convertTestToClb, emptyScores } from '../../lib/crs/languages'
+import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import { HighWageFields } from './HighWageFields'
 import { CRS_CHANGES_DOC, currentCrsRules, maximumCrsScore, usesLabourMarketIntegration, MAX_LMIF_WITH_SPOUSE, MAX_LMIF_WITHOUT_SPOUSE } from '../../lib/crs/labour-market'
@@ -136,7 +137,7 @@ export function CrsTool() {
       foreignWorkYears: (ui.foreignWorkYears === '' ? 0 : Number(ui.foreignWorkYears)) as WorkYears,
       spouse: ui.hasAccompanyingSpouse
         ? {
-            education: (ui.spouse?.education || 'secondary') as EducationLevel,
+            education: (ui.spouse?.education || 'less-than-secondary') as EducationLevel,
             language: spouseLanguage,
             canadianWorkYears: Number(ui.spouse?.canadianWorkYears ?? 0) as WorkYears,
           }
@@ -180,220 +181,111 @@ export function CrsTool() {
     setUi((prev) => ({ ...prev, spouse: { ...(prev.spouse ?? DEFAULT_SPOUSE), ...p } }))
   }
 
+  const languageSummary = ui.firstOfficialLanguage === 'english'
+    ? `English CLB ${overallClb(input.english) || '-'}`
+    : `French NCLC ${overallClb(input.french) || '-'}`
+
   return (
     <div className="tool-page px-4 sm:px-6">
-      <Seo
-        title="CRS Calculator | ImmiCalc"
-        description="Get a straightforward CRS score estimate for Express Entry - answer a few simple questions on age, education, language, and experience, with an instant result."
-        path="/crs"
-      />
+      <Seo title="CRS Calculator | ImmiCalc" description="Calculate Express Entry CRS points and compare changes to age, education, language and work experience." path="/crs" />
       <ToolTiles current="crs" />
-      <div className="tool-header">
-        <p className="tool-kicker">Federal · Express Entry</p>
-        <h1 className="tool-title mt-3">CRS Calculator</h1>
-        <p className="tool-description">
-          Estimate your Express Entry ranking points under the current rules or preview the November 3, 2026 changes.
-          A CRS score does not establish eligibility for an immigration program.
-        </p>
-      </div>
-
-      <div className="tool-workspace">
+      <ChromeSlot name="rules">
+        <Field label="Scoring rules" help={CRS_CHANGES_DOC}>
+          <Select ariaLabel="Scoring rules" value={ui.rules} onChange={(rules) => patch({ rules: rules as CrsRules })}
+            options={[
+              { value: 'before-2026-11-03', label: 'Through Nov 2, 2026' },
+              { value: 'from-2026-11-03', label: 'From Nov 3, 2026' },
+            ]} />
+        </Field>
+      </ChromeSlot>
+      <div className="tool-header"><h1>CRS Calculator</h1><p>Express Entry</p></div>
+      <ToolWorkspace>
         <FormSections>
-          <Section title="Profile" help={IRCC_GRID}>
-            <Field label="Scoring rules" help={CRS_CHANGES_DOC}>
-              <Select ariaLabel="Scoring rules" value={ui.rules}
-                onChange={(rules) => patch({ rules: rules as CrsRules })}
-                options={[
-                  { value: 'before-2026-11-03', label: 'March 25, 2025 to November 2, 2026' },
-                  { value: 'from-2026-11-03', label: 'From November 3, 2026 (high-wage rules)' },
-                ]} />
-            </Field>
-            <Note>
-              Rules checked October 28, 2026. The high-wage rules take effect November 3, 2026.
-              Select a rule version to compare scores. Historical draws used the rules in force on their draw date.
-            </Note>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Slider
-                label="Age"
-                min={17}
-                max={60}
-                value={ui.age}
-                onChange={(v) => patch({ age: v })}
-                format={(v) => (v >= 45 ? '45+' : String(v))}
-                help={IRCC_GRID}
-              />
+          <Section title="Your profile" tabLabel="Profile" help={IRCC_GRID} description="Age and accompanying partner."
+            summary={`${ui.age} years / ${ui.hasAccompanyingSpouse ? 'With partner' : 'Alone'}`}>
+            <div className="answer-columns">
+              <Slider label="Age" min={17} max={60} value={ui.age} onChange={(age) => patch({ age })} help={IRCC_GRID} />
               <Field label="Accompanying spouse or partner" help={IRCC_GRID}>
-                <Segmented
-                  ariaLabel="Accompanying spouse"
-                  value={ui.hasAccompanyingSpouse ? 'yes' : 'no'}
-                  onChange={setSpouseFlag}
-                  options={[
-                    { value: 'no', label: 'No' },
-                    { value: 'yes', label: 'Yes' },
-                  ]}
-                />
+                <Segmented ariaLabel="Accompanying spouse" value={ui.hasAccompanyingSpouse ? 'yes' : 'no'} onChange={setSpouseFlag}
+                  options={[{ value: 'no', label: 'Applying alone' }, { value: 'yes', label: 'With a partner' }]} />
+                <Note>Include a partner who will accompany you and needs permanent residence.</Note>
               </Field>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+          </Section>
+          <Section title="Education" help={IRCC_GRID} description="Completed credentials and Canadian study."
+            summary={EDUCATION_OPTIONS.find((option) => option.value === ui.education)?.label.replace('Select...', 'Not entered')}>
+            <div className="answer-columns">
               <Field label="Highest level of education" help={IRCC_GRID}>
-                <Select
-                  ariaLabel="Highest level of education"
-                  value={ui.education}
-                  onChange={(v) => patch({ education: v as EducationLevel | '' })}
-                  options={EDUCATION_OPTIONS}
-                />
+                <Select ariaLabel="Highest level of education" value={ui.education}
+                  onChange={(education) => patch({ education: education as EducationLevel | '' })} options={EDUCATION_OPTIONS} />
               </Field>
               <Field label="Post-secondary education in Canada" help={IRCC_GRID}>
-                <Select
-                  ariaLabel="Post-secondary education in Canada"
-                  value={ui.canadianEducation}
-                  onChange={(v) => patch({ canadianEducation: v as CanadianEducation | '' })}
-                  options={CANADIAN_EDUCATION_OPTIONS}
-                />
+                <Select ariaLabel="Post-secondary education in Canada" value={ui.canadianEducation}
+                  onChange={(canadianEducation) => patch({ canadianEducation: canadianEducation as CanadianEducation | '' })} options={CANADIAN_EDUCATION_OPTIONS} />
               </Field>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <Note>Foreign credentials require an Educational Credential Assessment to claim education points.</Note>
+          </Section>
+          <Section title="Language results" tabLabel="Language" help={IRCC_LANGUAGE} description="Test results for each ability." summary={languageSummary}>
+            <Field label="First official language" help={IRCC_LANGUAGE}>
+              <Segmented ariaLabel="First official language" value={ui.firstOfficialLanguage} onChange={setFirstLanguage}
+                options={[{ value: 'english', label: 'English' }, { value: 'french', label: 'French' }]} />
+            </Field>
+            {ui.firstOfficialLanguage === 'english'
+              ? <LanguageTestInputs title="English" allowedTests={ENGLISH_TESTS} value={ui.english} onChange={(english) => patch({ english })} help={IRCC_LANGUAGE} />
+              : <LanguageTestInputs title="French" allowedTests={FRENCH_TESTS} value={ui.french} onChange={(french) => patch({ french })} help={IRCC_LANGUAGE} />}
+            {secondLang.test === 'none'
+              ? <button type="button" onClick={addSecondLanguage} className="add-language">Add {secondTitle} test</button>
+              : <LanguageTestInputs title={`${secondTitle} (second language)`} allowedTests={secondTests} value={secondLang}
+                  onChange={(next) => patch({ [secondKey]: next })} help={IRCC_LANGUAGE} />}
+          </Section>
+          <Section title="Work experience" tabLabel="Experience" help={IRCC_GRID} description="Completed years of skilled work."
+            summary={`${input.canadianWorkYears} Canada / ${input.foreignWorkYears} abroad`}>
+            <div className="answer-columns">
               <Field label="Canadian work experience" help={IRCC_GRID}>
-                <Select
-                  ariaLabel="Canadian work experience"
-                  value={String(ui.canadianWorkYears)}
-                  onChange={(v) => patch({ canadianWorkYears: v === '' ? '' : (Number(v) as WorkYears) })}
-                  options={WORK_YEARS_OPTIONS}
-                />
+                <Select ariaLabel="Canadian work experience" value={String(ui.canadianWorkYears)}
+                  onChange={(value) => patch({ canadianWorkYears: Number(value) as WorkYears })} options={WORK_YEARS_OPTIONS} />
               </Field>
               <Field label="Foreign work experience" help={IRCC_GRID}>
-                <Select
-                  ariaLabel="Foreign work experience"
-                  value={String(ui.foreignWorkYears)}
-                  onChange={(v) => patch({ foreignWorkYears: v === '' ? '' : (Number(v) as WorkYears) })}
-                  options={WORK_YEARS_OPTIONS}
-                />
+                <Select ariaLabel="Foreign work experience" value={String(ui.foreignWorkYears)}
+                  onChange={(value) => patch({ foreignWorkYears: Number(value) as WorkYears })} options={WORK_YEARS_OPTIONS} />
               </Field>
             </div>
+            <Note>Count completed years in TEER 0, 1, 2 or 3 occupations. Five means five or more years.</Note>
           </Section>
-
-          <Section title="Language" help={IRCC_LANGUAGE}>
-            <Field label="First official language" help={IRCC_LANGUAGE}>
-              <Segmented
-                ariaLabel="First official language"
-                value={ui.firstOfficialLanguage}
-                onChange={setFirstLanguage}
-                options={[
-                  { value: 'english', label: 'English' },
-                  { value: 'french', label: 'French' },
-                ]}
-              />
-            </Field>
-            {ui.firstOfficialLanguage === 'english' ? (
-              <LanguageTestInputs
-                title="English"
-                allowedTests={ENGLISH_TESTS}
-                value={ui.english}
-                onChange={(next) => patch({ english: next })}
-                help={IRCC_LANGUAGE}
-              />
-            ) : (
-              <LanguageTestInputs
-                title="French"
-                allowedTests={FRENCH_TESTS}
-                value={ui.french}
-                onChange={(next) => patch({ french: next })}
-                help={IRCC_LANGUAGE}
-              />
-            )}
-            {secondLang.test === 'none' ? (
-              <button
-                type="button"
-                onClick={addSecondLanguage}
-                className="add-language flex w-full items-center justify-center gap-2 text-sm"
-              >
-                <span aria-hidden="true">+</span> Add {secondTitle} test
-              </button>
-            ) : (
-              <LanguageTestInputs
-                title={`${secondTitle} (second language)`}
-                allowedTests={secondTests}
-                value={secondLang}
-                onChange={(next) => patch({ [secondKey]: next })}
-                help={IRCC_LANGUAGE}
-              />
-            )}
-          </Section>
-
-          {ui.hasAccompanyingSpouse && (
-            <Section title="Spouse or partner" help={IRCC_GRID}>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Highest level of education" help={IRCC_GRID}>
-                  <Select
-                    ariaLabel="Spouse highest level of education"
-                    value={ui.spouse?.education ?? ''}
-                    onChange={(v) => patchSpouse({ education: v as EducationLevel | '' })}
-                    options={EDUCATION_OPTIONS}
-                  />
-                </Field>
-                <Field label="Canadian work experience" help={IRCC_GRID}>
-                  <Select
-                    ariaLabel="Spouse Canadian work experience"
-                    value={String(ui.spouse?.canadianWorkYears ?? '')}
-                    onChange={(v) =>
-                      patchSpouse({ canadianWorkYears: v === '' ? '' : (Number(v) as WorkYears) })
-                    }
-                    options={WORK_YEARS_OPTIONS}
-                  />
-                </Field>
-              </div>
-              <LanguageTestInputs
-                title="Official language"
-                allowedTests={ALL_TESTS}
-                value={ui.spouse?.test ?? DEFAULT_SPOUSE.test}
-                onChange={(next) => patchSpouse({ test: next })}
-                help={IRCC_LANGUAGE}
-              />
-            </Section>
-          )}
-
-          {usesLabourMarketIntegration(input) && (
-            <Section title="Labour market integration" help={CRS_CHANGES_DOC}>
-              <HighWageFields input={input} onChange={(changes) => patch(changes)} />
-              <Note>The gauge maximum of 1270 is the sum of the published factor maxima, pending IRCC's updated overall grid.</Note>
-            </Section>
-          )}
-
-          <Section title="Additional points" help={IRCC_GRID}>
-            <div className="space-y-3">
-              <CheckRow
-                label="Provincial nomination"
-                checked={ui.provincialNomination}
-                onChange={(v) => patch({ provincialNomination: v })}
-                help={IRCC_GRID}
-              />
-              <CheckRow
-                label="Sibling in Canada (citizen or PR, 18+)"
-                checked={ui.siblingInCanada}
-                onChange={(v) => patch({ siblingInCanada: v })}
-                help={IRCC_GRID}
-              />
-              <CheckRow
-                label="Certificate of qualification (trade)"
-                checked={ui.certificateOfQualification}
-                onChange={(v) => patch({ certificateOfQualification: v })}
-                help={IRCC_GRID}
-              />
-              {!usesLabourMarketIntegration(input) && <Note>From March 25, 2025 through November 2, 2026, job offers earn no CRS points. Switch scoring rules to preview the announced high-wage changes.</Note>}
+          {ui.hasAccompanyingSpouse && <Section title="Spouse or partner" tabLabel="Partner" help={IRCC_GRID} description="Your accompanying partner's credentials, language and Canadian work.">
+            <div className="answer-columns">
+              <Field label="Partner education" help={IRCC_GRID}>
+                <Select ariaLabel="Spouse highest level of education" value={ui.spouse?.education ?? ''}
+                  onChange={(education) => patchSpouse({ education: education as EducationLevel | '' })} options={EDUCATION_OPTIONS} />
+              </Field>
+              <Field label="Partner Canadian work experience" help={IRCC_GRID}>
+                <Select ariaLabel="Spouse Canadian work experience" value={String(ui.spouse?.canadianWorkYears ?? '')}
+                  onChange={(value) => patchSpouse({ canadianWorkYears: Number(value) as WorkYears })} options={WORK_YEARS_OPTIONS} />
+              </Field>
             </div>
+            <LanguageTestInputs title="Official language" allowedTests={ALL_TESTS} value={ui.spouse?.test ?? DEFAULT_SPOUSE.test}
+              onChange={(test) => patchSpouse({ test })} help={IRCC_LANGUAGE} />
+          </Section>}
+          {usesLabourMarketIntegration(input) && <Section title="High-wage work" tabLabel="High-wage" help={CRS_CHANGES_DOC}
+            description="Qualifying job offers and Canadian work in listed occupations.">
+            <HighWageFields input={input} onChange={(changes) => patch(changes)} />
+            <Note>The 1270 maximum is the sum of the published factor maxima. IRCC's overall grid update is pending.</Note>
+          </Section>}
+          <Section title="Additional factors" tabLabel="Additional" help={IRCC_GRID} description="Nomination, family and trade qualifications."
+            summary={`${[ui.provincialNomination, ui.siblingInCanada, ui.certificateOfQualification].filter(Boolean).length} selected`}>
+            <CheckRow label="Provincial nomination" checked={ui.provincialNomination} onChange={(provincialNomination) => patch({ provincialNomination })} help={IRCC_GRID} />
+            <CheckRow label="Sibling in Canada (citizen or PR, 18+)" checked={ui.siblingInCanada} onChange={(siblingInCanada) => patch({ siblingInCanada })} help={IRCC_GRID} />
+            <CheckRow label="Certificate of qualification (trade)" checked={ui.certificateOfQualification} onChange={(certificateOfQualification) => patch({ certificateOfQualification })} help={IRCC_GRID} />
           </Section>
-
-          <Recommendations input={input} currentTotal={score.total} />
+          <Section title="Score scenarios" tabLabel="Scenarios" description="Calculated changes from one adjustment at a time.">
+            <Recommendations input={input} currentTotal={score.total} />
+          </Section>
+          <Note>Rules checked October 28, 2026. Job offers earn zero CRS points from March 25, 2025 through November 2, 2026. The high-wage rules take effect November 3, 2026. Program eligibility is assessed separately.</Note>
         </FormSections>
-
-        <ToolSidebar
-          label="Estimated CRS score"
-          total={score.total}
-          max={maximumCrsScore(input)}
-          breakdown={<ScorePanel score={score} withSpouse={ui.hasAccompanyingSpouse} usesLmif={usesLabourMarketIntegration(input)} />}
-          draws={<DrawFeed />}
-        />
-      </div>
+        <ToolSidebar label="Estimated CRS score" total={score.total} max={maximumCrsScore(input)}
+          breakdown={<ScorePanel score={score} withSpouse={ui.hasAccompanyingSpouse} usesLmif={usesLabourMarketIntegration(input)} />} draws={<DrawFeed />} />
+      </ToolWorkspace>
     </div>
   )
 }

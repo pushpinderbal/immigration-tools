@@ -345,7 +345,7 @@ export function eligibility(input: ManitobaInput): ManitobaEligibility {
   const assessment = eligibilityAssessmentScore(input)
   if (!input.demand.ongoingEmploymentJobOffer && assessment < MIN_ELIGIBILITY_SCORE) {
     reasons.push(
-      `You scored ${assessment} out of 100 on the Skilled Worker Overseas assessment, but you need at least ${MIN_ELIGIBILITY_SCORE}.`,
+      `You scored ${assessment} out of 100 on the Skilled Worker Overseas assessment. The minimum is ${MIN_ELIGIBILITY_SCORE}.`,
     )
   }
 

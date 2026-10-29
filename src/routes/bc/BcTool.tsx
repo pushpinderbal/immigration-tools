@@ -1,3 +1,4 @@
+import { ToolWorkspace } from '../../components/CalculatorChrome'
 import { useMemo, useState } from 'react'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
 import { LanguageTestInputs } from '../../components/LanguageTestInputs'
@@ -82,7 +83,6 @@ interface BcUiState {
   professionalDesignation: boolean
   english: LanguageTestState
   french: LanguageTestState
-  bothLanguages: boolean
   hourlyWage: string
   area: AreaBand | ''
   regionalExperience: boolean
@@ -103,7 +103,6 @@ const DEFAULT_UI: BcUiState = {
   professionalDesignation: false,
   english: { test: 'none', scores: emptyScores() },
   french: { test: 'none', scores: emptyScores() },
-  bothLanguages: false,
   hourlyWage: '',
   area: '',
   regionalExperience: false,
@@ -131,7 +130,7 @@ export function BcTool() {
       professionalDesignation: ui.professionalDesignation,
       englishClb,
       frenchClb,
-      bothLanguages: ui.bothLanguages,
+      bothLanguages: englishClb >= 4 && frenchClb >= 4,
       hourlyWage: Number(ui.hourlyWage) || 0,
       area: (ui.area === '' ? 'area-1' : ui.area) as AreaBand,
       regionalExperience: ui.regionalExperience,
@@ -148,7 +147,7 @@ export function BcTool() {
     <div className="tool-page px-4 sm:px-6">
       <Seo
         title="BC PNP Points Calculator | ImmiCalc"
-        description="Get a straightforward BC PNP points estimate for Skills Immigration and Express Entry BC - a few simple questions, instant result."
+        description="Calculate BC PNP registration points and review selected Skilled Worker requirements."
         path="/bc"
       />
       <ToolTiles current="bc" />
@@ -167,30 +166,10 @@ export function BcTool() {
         </div>
       )}
 
-      <div className="tool-workspace">
+      <ToolWorkspace>
         <FormSections>
-          <Section title="Initial Skilled Worker checks" help={BC_DOC}>
-            <Note>Guide checked October 28, 2026 (effective June 10). These checks cover the Skilled Worker stream. Employer support, occupational wages and other stream requirements also apply. Invitations may target wages or other attributes separately from the registration score.</Note>
-            <Field label="Job offer NOC code" help={BC_DOC}>
-              <input aria-label="Job offer NOC code" inputMode="numeric" maxLength={5} className="control h-11 w-full px-3"
-                value={ui.jobNoc} onChange={(e) => patch({ jobNoc: e.target.value.replace(/[^0-9]/g, '') })} />
-            </Field>
-            <CheckRow label="I have two years of qualifying skilled work beyond the directly related experience entered below"
-              checked={ui.otherSkilledExperience} onChange={(v) => patch({ otherSkilledExperience: v })} help={BC_DOC} />
-            <NumberInput label="Family size (7 for 7 or more)" min={1} max={7} step={1} value={ui.familySize}
-              onChange={(v) => patch({ familySize: v })} help={BC_DOC} />
-            <Field label="Area of residence for family income" help={BC_DOC}>
-              <Select ariaLabel="Area of residence for family income" value={ui.incomeArea}
-                onChange={(v) => patch({ incomeArea: v as AreaBand })}
-                options={[{ value: 'area-1', label: 'Metro Vancouver' }, { value: 'area-3', label: 'Rest of B.C.' }]} />
-            </Field>
-            <NumberInput label="Weekly paid hours (maximum 40 counted)" min={30} max={40} value={ui.weeklyHours}
-              onChange={(v) => patch({ weeklyHours: v })} help={BC_DOC} />
-            <NumberInput label="Eligible spouse annual B.C. wages" min={0} value={ui.spouseAnnualIncome}
-              onChange={(v) => patch({ spouseAnnualIncome: v })} help={BC_DOC} />
-            <Note>Include your spouse and dependent children as defined in section 3.10. Spouse wages count only when they currently work in B.C. with valid work authorization. Family income affects these checks, not registration points. Occupational wage requirements apply independently.</Note>
-          </Section>
-          <Section title="Work experience" help={BC_DOC}>
+
+          <Section title="Work experience" tabLabel="Experience" help={BC_DOC} description="Experience related to the offered job." summary={WORK_EXPERIENCE_OPTIONS.find((o) => o.value === ui.workExperience)?.label.replace('Select...', 'Not entered')}>
             <Field label="Directly related work experience" help={BC_DOC}>
               <Select
                 ariaLabel="Directly related work experience"
@@ -215,7 +194,7 @@ export function BcTool() {
             </div>
           </Section>
 
-          <Section title="Education" help={BC_DOC}>
+          <Section title="Education" help={BC_DOC} description="Completed credentials and professional designation." summary={EDUCATION_OPTIONS.find((o) => o.value === ui.education)?.label.replace('Select...', 'Not entered')}>
             <Field label="Highest level of education" help={BC_DOC}>
               <Select
                 ariaLabel="Highest level of education"
@@ -240,7 +219,7 @@ export function BcTool() {
             />
           </Section>
 
-          <Section title="Language" help={BC_DOC}>
+          <Section title="Language results" tabLabel="Language" help={BC_DOC} description="English and French test results." summary={ui.english.test === 'none' && ui.french.test === 'none' ? 'Not entered' : 'Results entered'}>
             <LanguageTestInputs
               title="English"
               allowedTests={ENGLISH_TESTS}
@@ -265,16 +244,11 @@ export function BcTool() {
                 help={BC_DOC}
               />
             )}
-            <CheckRow
-              label="Proficiency (CLB 4+) in both English and French"
-              checked={ui.bothLanguages}
-              onChange={(v) => patch({ bothLanguages: v })}
-              help={BC_DOC}
-            />
+
             <Note>The language score uses the overall CLB (lowest band across skills) of your best English or French test.</Note>
           </Section>
 
-          <Section title="Economic factors" help={BC_DOC}>
+          <Section title="Wage and location" tabLabel="Job offer" help={BC_DOC} description="Offered hourly wage and work location." summary={ui.hourlyWage ? `$${ui.hourlyWage}/hr` : 'Not entered'}>
             <div className="grid gap-3 sm:grid-cols-2">
               <NumberInput
                 label="Hourly wage of BC job offer"
@@ -302,6 +276,29 @@ export function BcTool() {
             )}
             <Note>Wage points rise one point per dollar above $15 per hour, capped at 55.</Note>
           </Section>
+          <Section title="Skilled Worker checks" tabLabel="Requirements" description="Family income and occupational requirements." help={BC_DOC}>
+            <Note>Skilled Worker requirements, guide effective June 10, 2026. Employer support, occupational wages and invitation criteria also apply.</Note>
+            <div className="grid gap-6 sm:grid-cols-2">
+            <Field label="Job offer NOC code" help={BC_DOC}>
+              <input aria-label="Job offer NOC code" inputMode="numeric" maxLength={5} className="control h-11 w-full px-3"
+                value={ui.jobNoc} onChange={(e) => patch({ jobNoc: e.target.value.replace(/[^0-9]/g, '') })} />
+            </Field>
+            <CheckRow label="I have two years of other qualifying skilled work experience"
+              checked={ui.otherSkilledExperience} onChange={(v) => patch({ otherSkilledExperience: v })} help={BC_DOC} />
+            <NumberInput label="Family size (7 for 7 or more)" min={1} max={7} step={1} value={ui.familySize}
+              onChange={(v) => patch({ familySize: v })} help={BC_DOC} />
+            <Field label="Area of residence for family income" help={BC_DOC}>
+              <Select ariaLabel="Area of residence for family income" value={ui.incomeArea}
+                onChange={(v) => patch({ incomeArea: v as AreaBand })}
+                options={[{ value: 'area-1', label: 'Metro Vancouver' }, { value: 'area-3', label: 'Rest of B.C.' }]} />
+            </Field>
+            <NumberInput label="Weekly paid hours (maximum 40 counted)" min={30} max={40} value={ui.weeklyHours}
+              onChange={(v) => patch({ weeklyHours: v })} help={BC_DOC} />
+            <NumberInput label="Eligible spouse annual B.C. wages" min={0} value={ui.spouseAnnualIncome}
+              onChange={(v) => patch({ spouseAnnualIncome: v })} help={BC_DOC} />
+            </div>
+            <Note>Include family members as defined in section 3.10. Spouse wages require current B.C. employment and valid work authorization.</Note>
+          </Section>
         </FormSections>
 
         <ToolSidebar
@@ -310,7 +307,7 @@ export function BcTool() {
           max={MAX_TOTAL}
           breakdown={<BcScorePanel score={score} />}
         />
-      </div>
+      </ToolWorkspace>
 
     </div>
   )

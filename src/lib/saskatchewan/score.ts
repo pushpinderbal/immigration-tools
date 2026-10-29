@@ -178,14 +178,14 @@ export function eligibility(input: SinpInput): Eligibility {
 
   if (total < MIN_EOI_POINTS) {
     reasons.push(
-      `You must score at least ${MIN_EOI_POINTS} points on the SINP point assessment grid, but your estimated score is ${total}.`,
+      `You must score at least ${MIN_EOI_POINTS} points on the SINP point assessment grid. Your estimated score is ${total}.`,
     )
   }
 
   if (input.firstLanguageClb < MIN_FIRST_LANGUAGE_CLB) {
     reasons.push(
       input.firstLanguageClb === 0
-        ? `You need a first official language score of at least Canadian Language Benchmark (CLB) ${MIN_FIRST_LANGUAGE_CLB}, but you have not entered a qualifying language test.`
+        ? `You need a first official language score of at least Canadian Language Benchmark (CLB) ${MIN_FIRST_LANGUAGE_CLB}. Enter a qualifying language test.`
         : `Your first official language overall CLB of ${input.firstLanguageClb} is below the minimum of CLB ${MIN_FIRST_LANGUAGE_CLB}.`,
     )
   }

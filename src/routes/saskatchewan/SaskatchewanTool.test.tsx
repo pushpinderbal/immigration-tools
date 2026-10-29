@@ -1,3 +1,4 @@
+import { answer, control } from '../../test/calculator'
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -25,37 +26,37 @@ const total = () => {
 
 /** Fills the classic test profile: bachelor, 3 yrs work, 2 yrs prior, age 30, English IELTS 6 (CLB 7), family relative. */
 function fillStandardProfile() {
-  fireEvent.change(screen.getByLabelText('Highest level of education or training'), { target: { value: 'bachelor' } })
-  fireEvent.change(screen.getByLabelText('Skilled work experience (last 5 years)'), { target: { value: '3' } })
-  fireEvent.change(screen.getByLabelText('Skilled work experience (6-10 years prior)'), { target: { value: '2' } })
-  fireEvent.change(screen.getByLabelText('Age'), { target: { value: '30' } })
-  fireEvent.change(screen.getByLabelText('English (first official language) test'), { target: { value: 'ielts' } })
+  fireEvent.change(answer('Highest level of education or training'), { target: { value: 'bachelor' } })
+  fireEvent.change(answer('Skilled work experience (last 5 years)'), { target: { value: '3' } })
+  fireEvent.change(answer('Skilled work experience (6-10 years prior)'), { target: { value: '2' } })
+  fireEvent.change(answer('Age'), { target: { value: '30' } })
+  fireEvent.change(answer('English (first official language) test'), { target: { value: 'ielts' } })
   for (const a of ['listening', 'reading', 'writing', 'speaking']) {
-    fireEvent.change(screen.getByLabelText(`English (first official language) ${a}`), { target: { value: '6.0' } })
+    fireEvent.change(answer(`English (first official language) ${a}`), { target: { value: '6.0' } })
   }
-  fireEvent.click(screen.getByRole('checkbox', { name: /Close family relative in Saskatchewan/ }))
+  fireEvent.click(control('switch', { name: /Close family relative in Saskatchewan/ }))
 }
 
 describe('SaskatchewanTool', () => {
   it('scores French as the first official language using the full first-language table', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.change(screen.getByLabelText('First official language'), { target: { value: 'french' } })
-    fireEvent.change(screen.getByLabelText('French (first official language) test'), { target: { value: 'tef' } })
+    fireEvent.change(answer('First official language'), { target: { value: 'french' } })
+    fireEvent.change(answer('French (first official language) test'), { target: { value: 'tef' } })
     const scores: Record<string, string> = { listening: '434', reading: '434', writing: '428', speaking: '456' }
     for (const [ability, score] of Object.entries(scores)) {
-      fireEvent.change(screen.getByLabelText(`French (first official language) ${ability}`), { target: { value: score } })
+      fireEvent.change(answer(`French (first official language) ${ability}`), { target: { value: score } })
     }
     expect(total()).toBe('78')
-    fireEvent.click(screen.getByRole('button', { name: /Add second language test/ }))
-    const tests = screen.getByLabelText('English (second official language) test') as HTMLSelectElement
+    fireEvent.click(control('button', { name: /Add second language test/ }))
+    const tests = answer('English (second official language) test') as HTMLSelectElement
     expect(Array.from(tests.options).map((option) => option.value)).toEqual(['none', 'ielts', 'celpip', 'pte'])
   })
   it('waits for an answer before showing eligibility', () => {
     renderSask()
     expect(screen.queryByText('Requirements to review')).toBeNull()
     expect(screen.queryByText('Initial checks passed')).toBeNull()
-    const education = screen.getByLabelText('Highest level of education or training')
+    const education = answer('Highest level of education or training')
     fireEvent.focus(education)
     expect(screen.queryByText('Requirements to review')).toBeNull()
     fireEvent.change(education, { target: { value: 'bachelor' } })
@@ -79,7 +80,7 @@ describe('SaskatchewanTool', () => {
   it('updates when the age changes', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.change(screen.getByLabelText('Age'), { target: { value: '40' } })
+    fireEvent.change(answer('Age'), { target: { value: '40' } })
     // age 10 (was 12) → 76
     expect(total()).toBe('76')
   })
@@ -87,7 +88,7 @@ describe('SaskatchewanTool', () => {
   it('updates when the work experience changes', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.change(screen.getByLabelText('Skilled work experience (last 5 years)'), { target: { value: '5' } })
+    fireEvent.change(answer('Skilled work experience (last 5 years)'), { target: { value: '5' } })
     // work 10 (was 6) → 82
     expect(total()).toBe('82')
   })
@@ -95,7 +96,7 @@ describe('SaskatchewanTool', () => {
   it('updates when the prior work experience changes', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.change(screen.getByLabelText('Skilled work experience (6-10 years prior)'), { target: { value: '5' } })
+    fireEvent.change(answer('Skilled work experience (6-10 years prior)'), { target: { value: '5' } })
     // prior work 5 (was 2) → 81
     expect(total()).toBe('81')
   })
@@ -103,7 +104,7 @@ describe('SaskatchewanTool', () => {
   it('removes family points when the relative box is unchecked', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.click(screen.getByRole('checkbox', { name: /Close family relative in Saskatchewan/ }))
+    fireEvent.click(control('switch', { name: /Close family relative in Saskatchewan/ }))
     // connection 0 (was 20) → 58
     expect(total()).toBe('58')
   })
@@ -111,10 +112,10 @@ describe('SaskatchewanTool', () => {
   it('awards the full 30 points for an Employment Offer', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.click(screen.getByRole('button', { name: 'Employment Offer' }))
+    fireEvent.click(control('button', { name: 'Employment Offer' }))
     // connection 0 (no job offer yet) → 58
     expect(total()).toBe('58')
-    fireEvent.click(screen.getByRole('checkbox', { name: /High-skilled job offer/ }))
+    fireEvent.click(control('switch', { name: /High-skilled job offer/ }))
     // connection 30 → 88
     expect(total()).toBe('88')
   })
@@ -122,10 +123,10 @@ describe('SaskatchewanTool', () => {
   it('adds second-language points when a French test at CLB 6 is added', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.click(screen.getByRole('button', { name: /Add second language test/ }))
+    fireEvent.click(control('button', { name: /Add second language test/ }))
     const frenchScores: Record<string, string> = { reading: '393', writing: '379', listening: '393', speaking: '422' }
     for (const [ability, score] of Object.entries(frenchScores)) {
-      fireEvent.change(screen.getByLabelText(`French (second official language) ${ability}`), { target: { value: score } })
+      fireEvent.change(answer(`French (second official language) ${ability}`), { target: { value: score } })
     }
     // language 24 (18 first + 6 second) → 84
     expect(total()).toBe('84')
@@ -141,9 +142,9 @@ describe('SaskatchewanTool', () => {
   it('shows the not eligible banner with reasons when criteria are not met', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.change(screen.getByLabelText('Skilled work experience (last 5 years)'), { target: { value: '0' } })
-    fireEvent.change(screen.getByLabelText('Skilled work experience (6-10 years prior)'), { target: { value: '0' } })
-    fireEvent.click(screen.getByRole('checkbox', { name: /Close family relative in Saskatchewan/ }))
+    fireEvent.change(answer('Skilled work experience (last 5 years)'), { target: { value: '0' } })
+    fireEvent.change(answer('Skilled work experience (6-10 years prior)'), { target: { value: '0' } })
+    fireEvent.click(control('switch', { name: /Close family relative in Saskatchewan/ }))
     // points 50 (below 60) and no work experience both fail; language stays at CLB 7
     expect(screen.getByText('Requirements to review')).toBeTruthy()
     expect(screen.getByText(/You must score at least 60 points/)).toBeTruthy()
@@ -153,8 +154,8 @@ describe('SaskatchewanTool', () => {
   it('keeps the eligible banner for an Employment Offer with a job offer', () => {
     renderSask()
     fillStandardProfile()
-    fireEvent.click(screen.getByRole('button', { name: 'Employment Offer' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: /High-skilled job offer/ }))
+    fireEvent.click(control('button', { name: 'Employment Offer' }))
+    fireEvent.click(control('switch', { name: /High-skilled job offer/ }))
     expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 })

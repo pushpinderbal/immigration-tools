@@ -1,17 +1,16 @@
 import { useMemo } from 'react'
 import { getCrsRecommendations } from '../lib/crs/recommendations'
 import type { CrsInput } from '../lib/crs/types'
-import { Section, cn } from './ui'
+import { cn } from './ui'
 
 export function Recommendations({ input, currentTotal }: { input: CrsInput; currentTotal: number }) {
   const recommendations = useMemo(() => getCrsRecommendations(input), [input])
 
   return (
-    <Section title="Ways to improve your score">
+    <div className="scenarios">
       {recommendations.length === 0 ? (
         <p className="text-sm leading-relaxed text-muted">
-          Your profile already earns the maximum points from the main factors at {currentTotal} points. Check the
-          latest Express Entry draw cutoffs to see how your score compares.
+          No positive gain was found for these changes. Current estimate: {currentTotal} points.
         </p>
       ) : (
         <ul className="recommendation-list divide-y divide-line">
@@ -39,6 +38,6 @@ export function Recommendations({ input, currentTotal }: { input: CrsInput; curr
           })}
         </ul>
       )}
-    </Section>
+    </div>
   )
 }

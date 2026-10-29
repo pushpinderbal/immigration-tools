@@ -1,3 +1,4 @@
+import { ToolWorkspace } from '../../components/CalculatorChrome'
 import { useMemo, useState } from 'react'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
 import { LanguageTestInputs } from '../../components/LanguageTestInputs'
@@ -201,7 +202,7 @@ export function OinpTool() {
     <div className="tool-page px-4 sm:px-6">
       <Seo
         title="OINP Points Calculator | ImmiCalc"
-        description="Check your OINP Expression of Interest points with a few simple questions on your job offer, education, and language, and get an instant result."
+        description="Calculate Ontario Workforce Priority points for job-offer applicants and self-employed physicians."
         path="/oinp"
       />
       <ToolTiles current="oinp" />
@@ -220,113 +221,56 @@ export function OinpTool() {
         </div>
       )}
 
-      <div className="tool-workspace">
+      <ToolWorkspace>
         <FormSections>
-          <Section title="Employment / labour market" help={OINP_DOC}>
+          <Section title="Job offer" tabLabel="Job offer" help={OINP_DOC} description="Application pathway, occupation and offered wage."
+            summary={ui.pathway === 'physician' ? 'Physician' : ui.hourlyWage ? `$${ui.hourlyWage}/hr` : 'Not entered'}>
             <Field label="Application pathway" help={OINP_DOC}>
-              <Select ariaLabel="Application pathway" value={ui.pathway}
-                onChange={(v) => patch({ pathway: v as OinpUiState['pathway'] })}
+              <Select ariaLabel="Application pathway" value={ui.pathway} onChange={(pathway) => patch({ pathway: pathway as OinpUiState['pathway'] })}
                 options={[{ value: 'job-offer', label: 'Job offer' }, { value: 'physician', label: 'Self-employed physician' }]} />
             </Field>
-            {ui.pathway === 'physician' && <>
+            {ui.pathway === 'physician' ? <>
               <CheckRow label="I have an OHIP billing number and eligible CPSO registration in good standing"
-                checked={ui.physicianRequirementsMet} onChange={(v) => patch({ physicianRequirementsMet: v })} help={OINP_DOC} />
-              <Note>Physicians receive health occupation and TEER 1 points. Wages are not scored. Select cumulative Ontario medical practice under Time working in Ontario. Region uses your OHIP practice address.</Note>
+                checked={ui.physicianRequirementsMet} onChange={(physicianRequirementsMet) => patch({ physicianRequirementsMet })} help={OINP_DOC} />
+              <Note>Physician scoring uses TEER 1, health occupations and cumulative Ontario medical practice.</Note>
+            </> : <>
+              <div className="answer-columns">
+                <Field label="NOC TEER category" help={OINP_DOC}>
+                  <Select ariaLabel="NOC TEER category" value={ui.teer} onChange={(teer) => patch({ teer })} options={TEER_OPTIONS} />
+                </Field>
+                <Field label="NOC broad category" help={OINP_DOC}>
+                  <Select ariaLabel="NOC broad occupational category" value={ui.nocBroad} onChange={(nocBroad) => patch({ nocBroad })} options={NOC_BROAD_OPTIONS} />
+                </Field>
+              </div>
+              <NumberInput label="Hourly wage" value={ui.hourlyWage} onChange={(hourlyWage) => patch({ hourlyWage })} suffix="$/hr" min={0} help={OINP_DOC} />
             </>}
-            {ui.pathway === 'job-offer' && <>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="NOC TEER category" help={OINP_DOC}>
-                <Select
-                  ariaLabel="NOC TEER category"
-                  value={ui.teer}
-                  onChange={(v) => patch({ teer: v })}
-                  options={TEER_OPTIONS}
-                />
-              </Field>
-              <Field label="NOC broad category" help={OINP_DOC}>
-                <Select
-                  ariaLabel="NOC broad occupational category"
-                  value={ui.nocBroad}
-                  onChange={(v) => patch({ nocBroad: v })}
-                  options={NOC_BROAD_OPTIONS}
-                />
-              </Field>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <NumberInput
-                label="Hourly wage"
-                value={ui.hourlyWage}
-                onChange={(v) => patch({ hourlyWage: v })}
-                suffix="$/hr"
-                help={OINP_DOC}
-              />
+          </Section>
+          <Section title="Ontario experience" tabLabel="Experience" help={OINP_DOC} description="Time in your position and other Ontario work."
+            summary={TENURE_OPTIONS.find((o) => o.value === (ui.pathway === 'physician' ? ui.ontarioWork : ui.tenureInPosition))?.label.replace('Select...', 'Not entered')}>
+            {ui.pathway === 'job-offer' ? <>
               <Field label="Time in job offer position" help={OINP_DOC}>
-                <Select
-                  ariaLabel="Time in job offer position"
-                  value={ui.tenureInPosition}
-                  onChange={(v) => patch({ tenureInPosition: v })}
-                  options={TENURE_OPTIONS}
-                />
+                <Select ariaLabel="Time in job offer position" value={ui.tenureInPosition} onChange={(tenureInPosition) => patch({ tenureInPosition })} options={TENURE_OPTIONS} />
               </Field>
-            </div>
-            {ui.tenureInPosition === 'less-6' && (
-              <Field label="Time working in Ontario" help={OINP_DOC}>
-                <Select
-                  ariaLabel="Time working in Ontario"
-                  value={ui.ontarioWork}
-                  onChange={(v) => patch({ ontarioWork: v })}
-                  options={TENURE_OPTIONS}
-                />
-              </Field>
-            )}
-            <CheckRow
-              label="Recent Ontario graduate (within the last 3 years)"
-              checked={ui.recentOntarioGraduate}
-              onChange={(v) => patch({ recentOntarioGraduate: v })}
-              help={OINP_DOC}
-            />
-            <Note>
-              Recent Ontario graduates (eligible Ontario institution within the last 3 years) only need 3 months in
-              the job offer position instead of 6. This is an eligibility rule and does not add EOI points.
-            </Note>
-            <NumberInput label="Qualifying months in job offer position" value={ui.positionMonths} min={0}
-              onChange={(v) => patch({ positionMonths: v })} help={OINP_DOC} />
-            <Note>For this eligibility check, use consecutive months within the last year for TEER 0 to 3, or cumulative months within the last two years for TEER 4 and 5. Leave blank to use the lower end of the scoring band above.</Note>
-            <CheckRow label="I meet the permitted two-year same-NOC work experience alternative (last 5 years)"
-              checked={ui.twoYearsSameNoc} onChange={(v) => patch({ twoYearsSameNoc: v })} help={OINP_DOC} />
-            <CheckRow label="I hold the mandatory licence that exempts my occupation from the experience requirement"
-              checked={ui.licensedForPosition} onChange={(v) => patch({ licensedForPosition: v })} help={OINP_DOC} />
-            <CheckRow label="Job offer is NOC 73300 or 73301 (six-month experience exception)"
-              checked={ui.transportOccupation} onChange={(v) => patch({ transportOccupation: v })} help={OINP_DOC} />
-            <CheckRow label="Job offer is in Ontario's listed skilled trades (CLB 5 language minimum)"
-              checked={ui.listedSkilledTrade} onChange={(v) => patch({ listedSkilledTrade: v })} help={OINP_DOC} />
-            </>}
-            {ui.pathway === 'physician' && <Field label="Cumulative medical practice in Ontario" help={OINP_DOC}>
-              <Select ariaLabel="Time working in Ontario" value={ui.ontarioWork}
-                onChange={(v) => patch({ ontarioWork: v })} options={TENURE_OPTIONS} />
+              {ui.tenureInPosition === 'less-6' && <Field label="Time working in Ontario" help={OINP_DOC}>
+                <Select ariaLabel="Time working in Ontario" value={ui.ontarioWork} onChange={(ontarioWork) => patch({ ontarioWork })} options={TENURE_OPTIONS} />
+              </Field>}
+              <Note>Under six months in the offered position, the grid uses general Ontario work experience.</Note>
+            </> : <Field label="Cumulative medical practice in Ontario" help={OINP_DOC}>
+              <Select ariaLabel="Time working in Ontario" value={ui.ontarioWork} onChange={(ontarioWork) => patch({ ontarioWork })} options={TENURE_OPTIONS} />
             </Field>}
-            <Note>Earnings must come from a single CRA Notice of Assessment issued in the last five years. Visitor status and applying from abroad award zero permit points.</Note>
-            <div className="grid gap-3 sm:grid-cols-2">
+          </Section>
+          <Section title="Earnings and status" tabLabel="Earnings" help={OINP_DOC} description="Canadian earnings history and current legal status.">
+            <div className="answer-columns">
               <Field label="Highest yearly earnings (last 5 yrs)" help={OINP_DOC}>
-                <Select
-                  ariaLabel="Highest yearly earnings"
-                  value={ui.earnings}
-                  onChange={(v) => patch({ earnings: v as EarningsBand | '' })}
-                  options={EARNINGS_OPTIONS}
-                />
+                <Select ariaLabel="Highest yearly earnings" value={ui.earnings} onChange={(earnings) => patch({ earnings: earnings as EarningsBand | '' })} options={EARNINGS_OPTIONS} />
               </Field>
               <Field label="Legal status in Canada" help={OINP_DOC}>
-                <Select
-                  ariaLabel="Legal status in Canada"
-                  value={ui.legalStatus}
-                  onChange={(v) => patch({ legalStatus: v as LegalStatus | '' })}
-                  options={LEGAL_STATUS_OPTIONS}
-                />
+                <Select ariaLabel="Legal status in Canada" value={ui.legalStatus} onChange={(legalStatus) => patch({ legalStatus: legalStatus as LegalStatus | '' })} options={LEGAL_STATUS_OPTIONS} />
               </Field>
             </div>
+            <Note>Use one CRA Notice of Assessment issued in the last five years.</Note>
           </Section>
-
-          <Section title="Education" help={OINP_DOC}>
+          <Section title="Education" help={OINP_DOC} description="Highest completed credential and Canadian study." summary={EDUCATION_OPTIONS.find((o) => o.value === ui.education)?.label.replace('Select...', 'Not entered')}>
             <Field label="Highest level of education" help={OINP_DOC}>
               <Select
                 ariaLabel="Highest level of education"
@@ -345,7 +289,7 @@ export function OinpTool() {
             </Field>
           </Section>
 
-          <Section title="Language" help={OINP_DOC}>
+          <Section title="Language results" tabLabel="Language" help={OINP_DOC} description="English and French test results." summary={ui.english.test === 'none' && ui.french.test === 'none' ? 'Not entered' : 'Results entered'}>
             <LanguageTestInputs
               title="English"
               allowedTests={ENGLISH_TESTS}
@@ -372,7 +316,7 @@ export function OinpTool() {
             )}
           </Section>
 
-          <Section title="Regional immigration" help={OINP_DOC}>
+          <Section title="Ontario location" tabLabel="Location" help={OINP_DOC} description="Work location or OHIP practice address." summary={REGION_OPTIONS.find((o) => o.value === ui.region)?.label.replace('Select...', 'Not entered')}>
             <Field label="Location of work in job offer" help={OINP_DOC}>
               <Select
                 ariaLabel="Location of work in job offer"
@@ -382,6 +326,25 @@ export function OinpTool() {
               />
             </Field>
           </Section>
+
+          {ui.pathway === 'job-offer' && <Section title="Applicant requirements" tabLabel="Requirements" help={OINP_DOC}
+            description="Experience thresholds and permitted alternatives.">
+            <NumberInput label="Qualifying months in job offer position" value={ui.positionMonths} min={0} onChange={(positionMonths) => patch({ positionMonths })} help={OINP_DOC} />
+            <Note>Use consecutive months within the last year for TEER 0 to 3, or cumulative months within the last two years for TEER 4 and 5. An empty field uses the lower end of your scoring band.</Note>
+            <CheckRow label="Recent Ontario graduate (within the last 3 years)" checked={ui.recentOntarioGraduate}
+              onChange={(recentOntarioGraduate) => patch({ recentOntarioGraduate })} help={OINP_DOC} />
+            <details className="program-notes"><summary>Experience alternatives and occupation rules</summary><div>
+              <CheckRow label="I meet the permitted two-year same-NOC work experience alternative (last 5 years)"
+                checked={ui.twoYearsSameNoc} onChange={(twoYearsSameNoc) => patch({ twoYearsSameNoc })} help={OINP_DOC} />
+              <CheckRow label="I hold the mandatory licence that exempts my occupation from the experience requirement"
+                checked={ui.licensedForPosition} onChange={(licensedForPosition) => patch({ licensedForPosition })} help={OINP_DOC} />
+              <CheckRow label="Job offer is NOC 73300 or 73301 (six-month experience exception)"
+                checked={ui.transportOccupation} onChange={(transportOccupation) => patch({ transportOccupation })} help={OINP_DOC} />
+              <CheckRow label="Job offer is in Ontario's listed skilled trades (CLB 5 language minimum)"
+                checked={ui.listedSkilledTrade} onChange={(listedSkilledTrade) => patch({ listedSkilledTrade })} help={OINP_DOC} />
+            </div></details>
+          </Section>}
+          <Note>Grid checked October 28, 2026, including the October 5 earnings update. Initial checks cover selected applicant requirements. The official guide lists employer, occupation and invitation requirements.</Note>
         </FormSections>
 
         <ToolSidebar
@@ -390,7 +353,7 @@ export function OinpTool() {
           max={ui.pathway === 'physician' ? MAX_PHYSICIAN_TOTAL : MAX_TOTAL}
           breakdown={<OinpScorePanel score={score} physician={ui.pathway === 'physician'} />}
         />
-      </div>
+      </ToolWorkspace>
 
     </div>
   )

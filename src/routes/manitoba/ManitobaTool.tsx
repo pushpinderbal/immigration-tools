@@ -1,3 +1,4 @@
+import { ToolWorkspace } from '../../components/CalculatorChrome'
 import { useMemo, useState } from 'react'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
 import { LanguageTestInputs } from '../../components/LanguageTestInputs'
@@ -49,7 +50,6 @@ interface ManitobaUiState {
   firstOfficialLanguage: 'english' | 'french'
   occupationTeer: string
   firstLanguage: LanguageTestState
-  hasSecondLanguage: boolean
   secondLanguage: LanguageTestState
   age: number
   workYears: string
@@ -71,7 +71,6 @@ const DEFAULT_UI: ManitobaUiState = {
   firstOfficialLanguage: 'english',
   occupationTeer: '',
   firstLanguage: { test: 'none', scores: emptyScores() },
-  hasSecondLanguage: false,
   secondLanguage: { test: 'none', scores: emptyScores() },
   age: 18,
   workYears: '',
@@ -99,7 +98,7 @@ export function ManitobaTool() {
     return {
       occupationTeer: (ui.occupationTeer === '' ? 4 : Number(ui.occupationTeer)) as ManitobaInput['occupationTeer'],
       firstLanguageClbs,
-      secondLanguage: ui.hasSecondLanguage && secondClb >= 5,
+      secondLanguage: secondClb >= 5,
       age: ui.age,
       workYears: Number(ui.workYears) || 0,
       recognizedByLicensingBody: ui.recognizedByLicensingBody,
@@ -140,7 +139,7 @@ export function ManitobaTool() {
     <div className="tool-page px-4 sm:px-6">
       <Seo
         title="Manitoba MPNP Points Calculator | ImmiCalc"
-        description="Get a straightforward MPNP Expression of Interest points estimate for Manitoba - a few simple questions, instant result."
+        description="Calculate Manitoba MPNP EOI ranking points and selected Skilled Worker checks."
         path="/manitoba"
       />
       <ToolTiles current="manitoba" />
@@ -159,12 +158,12 @@ export function ManitobaTool() {
         </div>
       )}
 
-      <div className="tool-workspace">
+      <ToolWorkspace>
         <FormSections>
-          <Section title="Language" help={MB_LANGUAGE_DOC}>
+          <Section title="Language results" tabLabel="Language" help={MB_LANGUAGE_DOC} description="First and second official language results." summary={ui.firstLanguage.test === 'none' ? 'Not entered' : `${ui.firstOfficialLanguage === 'english' ? 'English' : 'French'} results`}>
             <Field label="First official language" help={MB_LANGUAGE_DOC}>
               <Select ariaLabel="First official language" value={ui.firstOfficialLanguage}
-                onChange={(v) => patch({ firstOfficialLanguage: v as 'english' | 'french', firstLanguage: { test: 'none', scores: emptyScores() }, secondLanguage: { test: 'none', scores: emptyScores() }, hasSecondLanguage: false })}
+                onChange={(v) => patch({ firstOfficialLanguage: v as 'english' | 'french', firstLanguage: { test: 'none', scores: emptyScores() }, secondLanguage: { test: 'none', scores: emptyScores() } })}
                 options={[{ value: 'english', label: 'English' }, { value: 'french', label: 'French' }]} />
             </Field>
             <Field label="Occupation TEER (language requirement)" help={MB_LANGUAGE_DOC}>
@@ -179,12 +178,7 @@ export function ManitobaTool() {
               onChange={(next) => patch({ firstLanguage: next })}
               help={MB_LANGUAGE_DOC}
             />
-            <CheckRow
-              label="Second official language (overall CLB 5+)"
-              checked={ui.hasSecondLanguage}
-              onChange={(v) => patch({ hasSecondLanguage: v })}
-              help={MB_LANGUAGE_DOC}
-            />
+
             {ui.secondLanguage.test === 'none' ? (
               <button
                 type="button"
@@ -208,7 +202,7 @@ export function ManitobaTool() {
             </Note>
           </Section>
 
-          <Section title="Age and work experience" help={MB_DOC}>
+          <Section title="Age and work experience" tabLabel="Experience" help={MB_DOC} description="Age, completed work and licensing." summary={`${ui.age} years / ${ui.workYears || 0} years work`}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Slider
                 label="Age"
@@ -236,7 +230,7 @@ export function ManitobaTool() {
             />
           </Section>
 
-          <Section title="Education" help={MB_DOC}>
+          <Section title="Education" help={MB_DOC} description="Highest completed credential." summary={EDUCATION_OPTIONS.find((o) => o.value === ui.education)?.label.replace('Select...', 'Not entered')}>
             <Field label="Highest level of education" help={MB_DOC}>
               <Select
                 ariaLabel="Highest level of education"
@@ -247,40 +241,19 @@ export function ManitobaTool() {
             </Field>
           </Section>
 
-          <Section title="Adaptability" help={MB_DOC}>
+          <Section title="Manitoba connections" tabLabel="Connections" help={MB_DOC} description="Family, employment and regional connections." summary={ui.closeRelative ? 'Family' : ui.ongoingEmploymentJobOffer ? 'Employment' : ui.closeFriendOrDistantRelative ? 'Friend or relative' : 'Edit connections'}>
             <p className="text-sm font-medium text-ink">Connections to Manitoba</p>
-            <div className="space-y-3">
-              <CheckRow
-                label="Close relative in Manitoba"
-                checked={ui.closeRelative}
-                onChange={(v) => patch({ closeRelative: v })}
-                help={MB_DOC}
-              />
-              <CheckRow
-                label="Previous authorized work experience in Manitoba (6+ months)"
-                checked={ui.authorizedWork6Months}
-                onChange={(v) => patch({ authorizedWork6Months: v })}
-                help={MB_DOC}
-              />
-              <CheckRow
-                label="Post-secondary program in Manitoba (2+ years)"
-                checked={ui.postSecondary2Years}
-                onChange={(v) => patch({ postSecondary2Years: v })}
-                help={MB_DOC}
-              />
-              <CheckRow
-                label="Post-secondary program in Manitoba (1 year)"
-                checked={ui.postSecondary1Year}
-                onChange={(v) => patch({ postSecondary1Year: v })}
-                help={MB_DOC}
-              />
-              <CheckRow
-                label="Close friend or distant relative in Manitoba"
-                checked={ui.closeFriendOrDistantRelative}
-                onChange={(v) => patch({ closeFriendOrDistantRelative: v })}
-                help={MB_DOC}
-              />
-            </div>
+            <Field label="Highest-scoring connection to Manitoba" help={MB_DOC}>
+              <Select ariaLabel="Highest-scoring connection to Manitoba"
+                value={ui.closeRelative ? 'family' : ui.authorizedWork6Months ? 'work' : ui.postSecondary2Years ? 'study-2' : ui.postSecondary1Year ? 'study-1' : ui.closeFriendOrDistantRelative ? 'friend' : 'none'}
+                onChange={(value) => patch({ closeRelative: value === 'family', authorizedWork6Months: value === 'work',
+                  postSecondary2Years: value === 'study-2', postSecondary1Year: value === 'study-1', closeFriendOrDistantRelative: value === 'friend' })}
+                options={[
+                  { value: 'none', label: 'No connection' }, { value: 'family', label: 'Close relative in Manitoba' },
+                  { value: 'work', label: 'Previous authorized work, 6+ months' }, { value: 'study-2', label: 'Manitoba study, 2+ years' },
+                  { value: 'study-1', label: 'Manitoba study, 1 year' }, { value: 'friend', label: 'Close friend or distant relative' },
+                ]} />
+            </Field>
             <Note>Connections to Manitoba are capped at 200 points.</Note>
             <p className="text-sm font-medium text-ink">Manitoba demand</p>
             <div className="space-y-3">
@@ -307,7 +280,7 @@ export function ManitobaTool() {
             />
           </Section>
 
-          <Section title="Risk assessment" help={MB_DOC}>
+          <Section title="Other provinces" tabLabel="Other provinces" help={MB_DOC} description="Previous work and study outside Manitoba.">
             <div className="space-y-3">
               <CheckRow
                 label="Work experience in another province"
@@ -324,7 +297,7 @@ export function ManitobaTool() {
             </div>
             <Note>
               A close relative in another province with no close relative in Manitoba, or a previous application to
-              another province, is declared but does not affect your points.
+              another province, receives zero points in this grid.
             </Note>
           </Section>
 
@@ -341,7 +314,7 @@ export function ManitobaTool() {
           max={MAX_TOTAL}
           breakdown={<ManitobaScorePanel score={score} />}
         />
-      </div>
+      </ToolWorkspace>
 
     </div>
   )

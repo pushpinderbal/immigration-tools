@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterAll, beforeAll, afterEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterAll, beforeAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { ToolSidebar } from './ToolSidebar'
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 // JSDOM does not implement the native dialog methods.
 beforeAll(() => {
@@ -82,20 +82,29 @@ describe('ToolSidebar', () => {
     expect(screen.queryByText('breakdown rows')).toBeNull()
   })
 
-  it("fills the pot's water proportionally to the total", () => {
-    const { container } = renderSidebar(600)
-    const water = container.querySelector('rect')
-    expect(water).toBeTruthy()
-    expect(water?.getAttribute('height')).toBe('16')
+  it('announces the updated estimate immediately in both directions', () => {
+    const { rerender } = renderSidebar(600)
+    rerender(<ToolSidebar label="Estimated score" total={900} max={1200} breakdown={<div>breakdown rows</div>} />)
+    expect(screen.getByRole('status').textContent).toBe('900')
+    rerender(<ToolSidebar label="Estimated score" total={300} max={1200} breakdown={<div>breakdown rows</div>} />)
+    expect(screen.getByRole('status').textContent).toBe('300')
   })
 
-  it('drips water in when the score rises and leaks it out when it falls', () => {
-    const { container, rerender } = renderSidebar(600)
-    rerender(<ToolSidebar label="Estimated score" total={900} max={1200} breakdown={<div>breakdown rows</div>} />)
-    expect(container.querySelector('.drip-in')).toBeTruthy()
-    expect(container.querySelector('.drip-out')).toBeNull()
-    rerender(<ToolSidebar label="Estimated score" total={300} max={1200} breakdown={<div>breakdown rows</div>} />)
-    expect(container.querySelector('.drip-out')).toBeTruthy()
-    expect(container.querySelector('.drip-in')).toBeNull()
+  it('keeps animated digits between the previous and updated estimates when a frame predates the effect', () => {
+    let frame: FrameRequestCallback | undefined
+    vi.spyOn(performance, 'now').mockReturnValue(100)
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frame = callback; return 1 })
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const { container, rerender } = renderSidebar(0)
+    rerender(<ToolSidebar label="Estimated score" total={19} max={117} breakdown={<div />} />)
+    act(() => frame?.(90))
+    expect(container.querySelector('.live-score-number')?.textContent).toBe('0')
+    act(() => frame?.(220))
+    const middle = Number(container.querySelector('.live-score-number')?.textContent)
+    expect(middle).toBeGreaterThan(0)
+    expect(middle).toBeLessThan(19)
+    act(() => frame?.(340))
+    expect(container.querySelector('.live-score-number')?.textContent).toBe('19')
+    expect(screen.getByRole('status').textContent).toBe('19')
   })
 })

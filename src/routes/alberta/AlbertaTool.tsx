@@ -1,3 +1,4 @@
+import { ToolWorkspace } from '../../components/CalculatorChrome'
 import { useMemo, useState } from 'react'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
 import { LanguageTestInputs } from '../../components/LanguageTestInputs'
@@ -85,7 +86,6 @@ interface AlbertaUiState {
   educationLocation: EducationLocation | ''
   english: LanguageTestState
   french: LanguageTestState
-  bilingual: boolean
   totalExperience: ExperienceBand | ''
   canadianExperience: CanadianExperience
   age: number
@@ -101,7 +101,6 @@ const DEFAULT_UI: AlbertaUiState = {
   educationLocation: '',
   english: { test: 'none', scores: emptyScores() },
   french: { test: 'none', scores: emptyScores() },
-  bilingual: false,
   totalExperience: '',
   canadianExperience: 'none',
   age: 18,
@@ -124,7 +123,7 @@ export function AlbertaTool() {
       educationLocation: (ui.educationLocation === '' ? 'none' : ui.educationLocation) as EducationLocation,
       englishClb,
       frenchClb,
-      bilingual: ui.bilingual,
+      bilingual: englishClb >= 4 && frenchClb >= 4,
       totalExperience: (ui.totalExperience === '' ? 'less-6' : ui.totalExperience) as ExperienceBand,
       canadianExperience: ui.canadianExperience,
       age: ui.age,
@@ -149,7 +148,7 @@ export function AlbertaTool() {
     <div className="tool-page px-4 sm:px-6">
       <Seo
         title="Alberta AAIP Points Calculator | ImmiCalc"
-        description="A straightforward AAIP points check for Alberta's Worker stream - a few simple questions, instant result."
+        description="Calculate Alberta AAIP Worker EOI points from education, language, work and job-offer factors."
         path="/alberta"
       />
       <ToolTiles current="alberta" />
@@ -168,14 +167,31 @@ export function AlbertaTool() {
         </div>
       )}
 
-      <div className="tool-workspace">
+      <ToolWorkspace>
         <FormSections>
           <Note>
             Points grid checked October 28, 2026 (September 28, 2026 edition). The check above covers only the
             Worker EOI language minimum. Job offers and experience requirements vary by stream. Confirm eligibility
-            for at least one AAIP stream before registering. Wages and work hours can affect selection but add no grid points.
+            for at least one AAIP stream before registering. Wages and work hours are also recorded for selection.
           </Note>
-          <Section title="Human capital" help={AB_DOC}>
+          <Section title="Your profile" tabLabel="Profile" help={AB_DOC} description="Age and family in Alberta." summary={`${ui.age} years`}>
+            <Slider
+              label="Age"
+              min={18}
+              max={60}
+              value={ui.age}
+              onChange={(v) => patch({ age: v })}
+              format={(v) => (v >= 50 ? '50+' : String(v))}
+              help={AB_DOC}
+            />
+            <CheckRow
+              label="Family connection in Alberta (parent, child or sibling who is a citizen or PR, 18+)"
+              checked={ui.familyConnection}
+              onChange={(v) => patch({ familyConnection: v })}
+              help={AB_DOC}
+            />
+          </Section>
+          <Section title="Education" help={AB_DOC} tabLabel="Education" description="Highest completed credential and place of study." summary={EDUCATION_OPTIONS.find((o) => o.value === ui.education)?.label.replace('Select...', 'Not entered')}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Highest level of education" help={AB_DOC}>
                 <Select
@@ -195,7 +211,10 @@ export function AlbertaTool() {
               </Field>
             </div>
 
-            <div className="language-card">
+          </Section>
+          <Section title="Language results" tabLabel="Language" help={AB_DOC} description="English and French test results."
+            summary={`${overallClb(convertTestToClb(ui.english.test, ui.english.scores))} English / ${overallClb(convertTestToClb(ui.french.test, ui.french.scores))} French`}>
+
               <LanguageTestInputs
                 title="English"
                 allowedTests={ENGLISH_TESTS}
@@ -220,13 +239,10 @@ export function AlbertaTool() {
                   help={AB_DOC}
                 />
               )}
-              <CheckRow
-                label="Bilingual (CLB/NCLC 4+ in both English and French)"
-                checked={ui.bilingual}
-                onChange={(v) => patch({ bilingual: v })}
-                help={AB_DOC}
-              />
-            </div>
+
+          </Section>
+          <Section title="Work experience" tabLabel="Experience" help={AB_DOC} description="Canadian and overseas work."
+            summary={EXPERIENCE_OPTIONS.find((o) => o.value === ui.totalExperience)?.label.replace('Select...', 'Not entered')}>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Total work experience" help={AB_DOC}>
@@ -247,24 +263,11 @@ export function AlbertaTool() {
               </Field>
             </div>
 
-            <Slider
-              label="Age"
-              min={18}
-              max={60}
-              value={ui.age}
-              onChange={(v) => patch({ age: v })}
-              format={(v) => (v >= 50 ? '50+' : String(v))}
-              help={AB_DOC}
-            />
+
           </Section>
 
-          <Section title="Economic factors" help={AB_DOC}>
-            <CheckRow
-              label="Family connection in Alberta (parent, child or sibling who is a citizen or PR, 18+)"
-              checked={ui.familyConnection}
-              onChange={(v) => patch({ familyConnection: v })}
-              help={AB_DOC}
-            />
+          <Section title="Alberta job offer" tabLabel="Job offer" help={AB_DOC} description="Employer, location and occupational licensing." summary={ui.permanentJobOffer || ui.sectorJobOffer !== 'none' ? 'Offer entered' : 'No offer'}>
+
             <CheckRow
               label="Permanent full-time job offer in Alberta"
               checked={ui.permanentJobOffer}
@@ -317,7 +320,7 @@ export function AlbertaTool() {
             />
           }
         />
-      </div>
+      </ToolWorkspace>
 
     </div>
   )

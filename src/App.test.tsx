@@ -31,7 +31,7 @@ describe('App', () => {
   it('shows the brand, the landing heading and the federal calculator link', () => {
     renderApp('/')
     expect(screen.getByRole('link', { name: /ImmiCalc/ })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /Your PR Journey/ })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Immigration points/ })).toBeTruthy()
     expect(screen.getByRole('link', { name: /Express Entry \(CRS\)/ })).toBeTruthy()
   })
 
@@ -47,6 +47,6 @@ describe('App', () => {
     renderApp('/crs')
     expect(screen.getByText('crs page')).toBeTruthy()
     fireEvent.click(screen.getByRole('link', { name: /ImmiCalc/ }))
-    expect(screen.getByRole('heading', { name: /Your PR Journey/ })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Immigration points/ })).toBeTruthy()
   })
 })

@@ -1,3 +1,4 @@
+import { ToolWorkspace } from '../../components/CalculatorChrome'
 import { useMemo, useState } from 'react'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
 import { LanguageTestInputs } from '../../components/LanguageTestInputs'
@@ -123,7 +124,7 @@ export function SaskatchewanTool() {
     <div className="tool-page px-4 sm:px-6">
       <Seo
         title="SINP Points Calculator | ImmiCalc"
-        description="A straightforward SINP points check for Saskatchewan's International Skilled Worker program - a few simple questions, instant result."
+        description="Calculate Saskatchewan International Skilled Worker points from education, work, language and connections."
         path="/saskatchewan"
       />
       <ToolTiles current="saskatchewan" />
@@ -142,7 +143,7 @@ export function SaskatchewanTool() {
         </div>
       )}
 
-      <div className="tool-workspace">
+      <ToolWorkspace>
         <FormSections>
           <Note>
             Grid checked October 28, 2026. This score covers International Skilled Worker only.
@@ -150,7 +151,29 @@ export function SaskatchewanTool() {
             The official years 6 to 10 table lists points for two to five years, with no one-year row;
             this calculator awards no points for a single year in that older period. Confirm that case with SINP.
           </Note>
-          <Section title="Labour market success" help={SASK_DOC}>
+          <Section title="Your profile" tabLabel="Profile" help={SASK_DOC} description="Age and International Skilled Worker sub-category." summary={`${ui.age} years / ${ui.subCategory === 'oid-ee' ? 'OID or EE' : 'Job offer'}`}>
+            <Slider
+              label="Age"
+              min={17}
+              max={60}
+              value={ui.age}
+              onChange={(v) => patch({ age: v })}
+              format={(v) => String(v)}
+              help={SASK_DOC}
+            />
+            <Field label="Sub-category" help={SASK_DOC}>
+              <Segmented
+                ariaLabel="SINP sub-category"
+                value={ui.subCategory}
+                onChange={(v) => patch({ subCategory: v })}
+                options={[
+                  { value: 'oid-ee', label: 'OID / Express Entry' },
+                  { value: 'employment-offer', label: 'Employment Offer' },
+                ]}
+              />
+            </Field>
+          </Section>
+          <Section title="Education" help={SASK_DOC} description="Completed education or trade qualification." summary={EDUCATION_OPTIONS.find((o) => o.value === ui.education)?.label.replace('Select...', 'Not entered')}>
             <Field label="Highest level of education or training" help={SASK_DOC}>
               <Select
                 ariaLabel="Highest level of education or training"
@@ -159,6 +182,8 @@ export function SaskatchewanTool() {
                 options={EDUCATION_OPTIONS}
               />
             </Field>
+          </Section>
+          <Section title="Work experience" tabLabel="Experience" help={SASK_DOC} description="Completed years in the two assessment periods." summary={`${ui.work || 0} recent / ${ui.priorWork || 0} earlier`}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Skilled work experience (last 5 years)" help={SASK_DOC}>
                 <Select
@@ -177,18 +202,10 @@ export function SaskatchewanTool() {
                 />
               </Field>
             </div>
-            <Slider
-              label="Age"
-              min={17}
-              max={60}
-              value={ui.age}
-              onChange={(v) => patch({ age: v })}
-              format={(v) => String(v)}
-              help={SASK_DOC}
-            />
+
           </Section>
 
-          <Section title="Language" help={SASK_DOC}>
+          <Section title="Language results" tabLabel="Language" help={SASK_DOC} description="First and second official language tests." summary={ui.firstLanguage.test === 'none' ? 'Not entered' : `${ui.firstOfficialLanguage === 'english' ? 'English' : 'French'} results`}>
             <Field label="First official language" help={SASK_DOC}>
               <Select ariaLabel="First official language" value={ui.firstOfficialLanguage}
                 onChange={(v) => patch({ firstOfficialLanguage: v as 'english' | 'french', firstLanguage: { test: 'none', scores: emptyScores() }, secondLanguage: { test: 'none', scores: emptyScores() } })}
@@ -221,18 +238,8 @@ export function SaskatchewanTool() {
             <Note>The language score uses the overall CLB of your first official language, with a smaller bonus for a second official language.</Note>
           </Section>
 
-          <Section title="Connection to Saskatchewan" help={SASK_DOC}>
-            <Field label="Sub-category" help={SASK_DOC}>
-              <Segmented
-                ariaLabel="SINP sub-category"
-                value={ui.subCategory}
-                onChange={(v) => patch({ subCategory: v })}
-                options={[
-                  { value: 'oid-ee', label: 'OID / Express Entry' },
-                  { value: 'employment-offer', label: 'Employment Offer' },
-                ]}
-              />
-            </Field>
+          <Section title="Saskatchewan connections" tabLabel="Connections" help={SASK_DOC} description="Family, previous work, study or employment offer.">
+
             {ui.subCategory === 'oid-ee' ? (
               <div className="space-y-3">
                 <CheckRow
@@ -274,7 +281,7 @@ export function SaskatchewanTool() {
           max={MAX_TOTAL}
           breakdown={<SaskatchewanScorePanel score={score} />}
         />
-      </div>
+      </ToolWorkspace>
 
     </div>
   )

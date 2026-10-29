@@ -90,12 +90,12 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
         : withChanges(input, { french: raiseTo(firstProficiency, 9) })
     const hint =
       input.firstOfficialLanguage === 'english'
-        ? 'For IELTS that is roughly 8.0 in listening and 7.0 in the other three skills.'
+        ? 'IELTS General: 8.0 in listening and 7.0 in reading, writing and speaking.'
         : 'Aim for NCLC 9 in listening, reading, writing, and speaking.'
     push(
       'first-language',
       `Reach CLB 9 in ${firstName}`,
-      `Retake your ${firstName} test and aim for CLB 9 in all four abilities. ${hint}`,
+      `This scenario sets all four ${firstName} abilities to at least CLB 9. ${hint}`,
       pointGain(baseTotal, next),
     )
   } else if (firstClb === 9) {
@@ -106,7 +106,7 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
     push(
       'first-language',
       `Reach CLB 10 in ${firstName}`,
-      `Push your ${firstName} scores to CLB 10 in all four abilities to take the top band in the language table.`,
+      `This scenario sets all four ${firstName} abilities to CLB 10.`,
       pointGain(baseTotal, next),
     )
   }
@@ -118,12 +118,12 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
         : withChanges(input, { english: raiseTo(secondProficiency, 7) })
     const bonus =
       secondName === 'French'
-        ? ' Strong French also earns the French ability bonus worth up to 50 points.'
+        ? ' French can also qualify for up to 50 additional points.'
         : ''
     push(
       'second-language',
       `Reach CLB 7 in ${secondName}`,
-      `Take a ${secondName} test and score CLB 7 in all four abilities.${bonus}`,
+      `This scenario sets all four ${secondName} abilities to at least CLB 7.${bonus}`,
       pointGain(baseTotal, next),
     )
   }
@@ -161,7 +161,7 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
     push(
       'provincial-nomination',
       'Get a provincial nomination',
-      'A provincial nomination adds 600 points and is the single biggest point gain in Express Entry. Apply to the streams run by the provinces where you are willing to live and work.',
+      'A qualifying provincial nomination adds up to 600 points within the additional-points cap. Stream requirements apply.',
       pointGain(baseTotal, withChanges(input, { provincialNomination: true })),
     )
   }
@@ -223,7 +223,7 @@ export function getCrsRecommendations(input: CrsInput): CrsRecommendation[] {
     const lost = baseTotal - nextYearTotal
     push(
       'age-warning',
-      'Apply before your next birthday',
+      'Age at your next birthday',
       `Your score drops by ${lost} point${lost === 1 ? '' : 's'} when you turn ${input.age + 1}. Creating a profile does not lock in your age points.`,
       lost,
     )
