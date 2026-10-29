@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useCalculatorForm } from '../../hooks/useCalculatorForm'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
-import { LanguageTestInputs } from '../../components/LanguageTestInputs'
+import { LanguageTestInputs, OptionalLanguageTestInputs } from '../../components/LanguageTestInputs'
 import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { FormSections, CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
-import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
+import { ENGLISH_TESTS, FRENCH_TESTS, convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
   MAX_EDUCATION,
@@ -14,6 +15,7 @@ import {
   MAX_LANGUAGE,
   MAX_REGION,
   MAX_TOTAL,
+  MAX_PHYSICIAN_TOTAL,
   eligibility,
   oinpScore,
 } from '../../lib/oinp/score'
@@ -64,7 +66,8 @@ const TENURE_OPTIONS = [
 
 const EARNINGS_OPTIONS: ReadonlyArray<{ value: EarningsBand | ''; label: string }> = [
   { value: '', label: 'Select...' },
-  { value: 'over-70k', label: '$70k or more' },
+  { value: '80k-plus', label: '$80k or more' },
+  { value: 'over-70k', label: '$70k-$79,999' },
   { value: '50k-70k', label: '$50k-$69,999' },
   { value: '30k-50k', label: '$30k-$49,999' },
   { value: 'under-30k', label: 'Under $30k' },
@@ -74,7 +77,9 @@ const LEGAL_STATUS_OPTIONS: ReadonlyArray<{ value: LegalStatus | ''; label: stri
   { value: '', label: 'Select...' },
   { value: 'work-permit', label: 'Valid work permit' },
   { value: 'study-permit', label: 'Valid study permit' },
-  { value: 'none', label: 'No valid work or study permit' },
+  { value: 'visitor', label: 'Valid visitor record / other lawful temporary status' },
+  { value: 'outside-canada', label: 'Applying from outside Canada' },
+  { value: 'none', label: 'In Canada without valid legal status' },
 ]
 
 const EDUCATION_OPTIONS: ReadonlyArray<{ value: EducationLevel | ''; label: string }> = [
@@ -107,10 +112,14 @@ const REGION_OPTIONS: ReadonlyArray<{ value: Region | ''; label: string }> = [
   { value: 'toronto', label: 'Toronto' },
 ]
 
-const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const FRENCH_TESTS = ['tef', 'tcf'] as const
-
 interface OinpUiState {
+  pathway: 'job-offer' | 'physician'
+  physicianRequirementsMet: boolean
+  positionMonths: string
+  twoYearsSameNoc: boolean
+  licensedForPosition: boolean
+  transportOccupation: boolean
+  listedSkilledTrade: boolean
   teer: string
   nocBroad: string
   hourlyWage: string
@@ -127,6 +136,13 @@ interface OinpUiState {
 }
 
 const DEFAULT_UI: OinpUiState = {
+  pathway: 'job-offer',
+  physicianRequirementsMet: false,
+  positionMonths: '',
+  twoYearsSameNoc: false,
+  licensedForPosition: false,
+  transportOccupation: false,
+  listedSkilledTrade: false,
   teer: '',
   nocBroad: '',
   hourlyWage: '',
@@ -143,15 +159,21 @@ const DEFAULT_UI: OinpUiState = {
 }
 
 export function OinpTool() {
-  const [ui, setUi] = useState<OinpUiState>(DEFAULT_UI)
-  const [hasStarted, setHasStarted] = useState(false)
+  const { values: ui, patch, hasStarted } = useCalculatorForm<OinpUiState>(DEFAULT_UI)
 
   const { score, eligibilityResult } = useMemo(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
     const frenchClb = overallClb(convertTestToClb(ui.french.test, ui.french.scores))
     const input: OinpInput = {
+      pathway: ui.pathway,
+      physicianRequirementsMet: ui.physicianRequirementsMet,
+      positionMonths: ui.positionMonths === '' ? undefined : Number(ui.positionMonths),
+      twoYearsSameNoc: ui.twoYearsSameNoc,
+      licensedForPosition: ui.licensedForPosition,
+      transportOccupation: ui.transportOccupation,
+      listedSkilledTrade: ui.listedSkilledTrade,
       teer: (ui.teer === '' ? 5 : Number(ui.teer)) as TeerCategory,
-      nocBroad: (ui.nocBroad === '' ? 9 : Number(ui.nocBroad)) as NocBroadCategory,
+      nocBroad: ui.nocBroad === '' ? null : Number(ui.nocBroad) as NocBroadCategory,
       hourlyWage: Number(ui.hourlyWage) || 0,
       tenureInPosition: (ui.tenureInPosition === '' ? 'less-6' : ui.tenureInPosition) as TenureBand,
       ontarioWork: (ui.ontarioWork === '' ? 'less-6' : ui.ontarioWork) as TenureBand,
@@ -167,11 +189,6 @@ export function OinpTool() {
     return { score: oinpScore(input), eligibilityResult: eligibility(input) }
   }, [ui])
 
-  const patch = (p: Partial<OinpUiState>) => {
-    setHasStarted(true)
-    setUi((prev) => ({ ...prev, ...p }))
-  }
-
   return (
     <div className="tool-page px-4 sm:px-6">
       <Seo
@@ -184,8 +201,8 @@ export function OinpTool() {
         <p className="tool-kicker">Ontario · Provincial program</p>
         <h1 className="tool-title mt-3">OINP Points Calculator</h1>
         <p className="tool-description">
-          Ontario's Workforce Priority stream ranks job-offer candidates out of 130. Enter your details to see your
-          points and how they add up.
+          Ontario's Workforce Priority stream has a maximum of 132 points for job-offer applicants and 117 for
+          self-employed physicians. Grid checked October 28, 2026, including the October 5 earnings update.
         </p>
       </div>
 
@@ -198,6 +215,17 @@ export function OinpTool() {
       <div className="tool-workspace">
         <FormSections>
           <Section title="Employment / labour market" help={OINP_DOC}>
+            <Field label="Application pathway" help={OINP_DOC}>
+              <Select ariaLabel="Application pathway" value={ui.pathway}
+                onChange={(v) => patch({ pathway: v as OinpUiState['pathway'] })}
+                options={[{ value: 'job-offer', label: 'Job offer' }, { value: 'physician', label: 'Self-employed physician' }]} />
+            </Field>
+            {ui.pathway === 'physician' && <>
+              <CheckRow label="I have an OHIP billing number and eligible CPSO registration in good standing"
+                checked={ui.physicianRequirementsMet} onChange={(v) => patch({ physicianRequirementsMet: v })} help={OINP_DOC} />
+              <Note>Physicians receive health occupation and TEER 1 points. Wages are not scored. Select cumulative Ontario medical practice under Time working in Ontario. Region uses your OHIP practice address.</Note>
+            </>}
+            {ui.pathway === 'job-offer' && <>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="NOC TEER category" help={OINP_DOC}>
                 <Select
@@ -253,6 +281,23 @@ export function OinpTool() {
               Recent Ontario graduates (eligible Ontario institution within the last 3 years) only need 3 months in
               the job offer position instead of 6. This is an eligibility rule and does not add EOI points.
             </Note>
+            <NumberInput label="Qualifying months in job offer position" value={ui.positionMonths} min={0}
+              onChange={(v) => patch({ positionMonths: v })} help={OINP_DOC} />
+            <Note>For this eligibility check, use consecutive months within the last year for TEER 0 to 3, or cumulative months within the last two years for TEER 4 and 5. Leave blank to use the lower end of the scoring band above.</Note>
+            <CheckRow label="I meet the permitted two-year same-NOC work experience alternative (last 5 years)"
+              checked={ui.twoYearsSameNoc} onChange={(v) => patch({ twoYearsSameNoc: v })} help={OINP_DOC} />
+            <CheckRow label="I hold the mandatory licence that exempts my occupation from the experience requirement"
+              checked={ui.licensedForPosition} onChange={(v) => patch({ licensedForPosition: v })} help={OINP_DOC} />
+            <CheckRow label="Job offer is NOC 73300 or 73301 (six-month experience exception)"
+              checked={ui.transportOccupation} onChange={(v) => patch({ transportOccupation: v })} help={OINP_DOC} />
+            <CheckRow label="Job offer is in Ontario's listed skilled trades (CLB 5 language minimum)"
+              checked={ui.listedSkilledTrade} onChange={(v) => patch({ listedSkilledTrade: v })} help={OINP_DOC} />
+            </>}
+            {ui.pathway === 'physician' && <Field label="Cumulative medical practice in Ontario" help={OINP_DOC}>
+              <Select ariaLabel="Time working in Ontario" value={ui.ontarioWork}
+                onChange={(v) => patch({ ontarioWork: v })} options={TENURE_OPTIONS} />
+            </Field>}
+            <Note>Earnings must come from a single CRA Notice of Assessment issued in the last five years. Visitor status and applying from abroad award zero permit points.</Note>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Highest yearly earnings (last 5 yrs)" help={OINP_DOC}>
                 <Select
@@ -300,23 +345,14 @@ export function OinpTool() {
               onChange={(next) => patch({ english: next })}
               help={OINP_DOC}
             />
-            {ui.french.test === 'none' ? (
-              <button
-                type="button"
-                onClick={() => patch({ french: { test: 'tef', scores: emptyScores() } })}
-                className="add-language flex w-full items-center justify-center gap-2 text-sm"
-              >
-                <span aria-hidden="true">+</span> Add French test
-              </button>
-            ) : (
-              <LanguageTestInputs
-                title="French"
-                allowedTests={FRENCH_TESTS}
-                value={ui.french}
-                onChange={(next) => patch({ french: next })}
-                help={OINP_DOC}
-              />
-            )}
+            <OptionalLanguageTestInputs
+              title="French"
+              addLabel="Add French test"
+              allowedTests={FRENCH_TESTS}
+              value={ui.french}
+              onChange={(next) => patch({ french: next })}
+              help={OINP_DOC}
+            />
           </Section>
 
           <Section title="Regional immigration" help={OINP_DOC}>
@@ -334,8 +370,8 @@ export function OinpTool() {
         <ToolSidebar
           label="Estimated OINP EOI score"
           total={score.total}
-          max={MAX_TOTAL}
-          breakdown={<OinpScorePanel score={score} />}
+          max={ui.pathway === 'physician' ? MAX_PHYSICIAN_TOTAL : MAX_TOTAL}
+          breakdown={<OinpScorePanel score={score} physician={ui.pathway === 'physician'} />}
         />
       </div>
 
@@ -343,9 +379,9 @@ export function OinpTool() {
   )
 }
 
-function OinpScorePanel({ score }: { score: OinpBreakdown }) {
+function OinpScorePanel({ score, physician }: { score: OinpBreakdown; physician: boolean }) {
   const rows: Array<{ label: string; value: number; max?: number }> = [
-    { label: 'Labour market', value: score.labour, max: MAX_LABOUR },
+    { label: 'Labour market', value: score.labour, max: MAX_LABOUR - (physician ? 15 : 0) },
     { label: 'Education', value: score.education, max: MAX_EDUCATION },
     { label: 'Language', value: score.language, max: MAX_LANGUAGE },
     { label: 'Region', value: score.region, max: MAX_REGION },

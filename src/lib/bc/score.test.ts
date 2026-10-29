@@ -177,6 +177,23 @@ describe('BC PNP SIRS total', () => {
 })
 
 describe('BC PNP eligibility (Skills Immigration general requirements)', () => {
+  it('checks the full family income table, actual hours and area of residence', () => {
+    expect(minimumIncomeWage('area-1', 4, 30)).toBe(37.25)
+    expect(eligibility(base({ hourlyWage: 30, area: 'area-3', incomeArea: 'area-1', familySize: 4, weeklyHours: 30 })).eligible).toBe(false)
+    expect(eligibility(base({ hourlyWage: 30, area: 'area-3', incomeArea: 'area-1', familySize: 4, weeklyHours: 30, spouseAnnualIncome: 20000 })).eligible).toBe(true)
+  })
+  it('does not impose the language-test floor on TEER 0 and 1 registrations', () => {
+    expect(eligibility(base({ jobNoc: '21232', englishClb: 0, frenchClb: 0 })).eligible).toBe(true)
+    expect(eligibility(base({ jobNoc: '42201', englishClb: 0, frenchClb: 0 })).eligible).toBe(false)
+  })
+  it('rejects NOCs excluded after June 13, 2026 regardless of the points score', () => {
+    expect(eligibility(base({ jobNoc: '13110' })).reasons.join(' ')).toMatch(/ineligible/)
+  })
+  it('distinguishes skilled experience for eligibility from directly related ranking experience', () => {
+    const input = base({ workExperience: 'less-1', skilledWorkExperience: true })
+    expect(eligibility(input).eligible).toBe(true)
+    expect(bcScore(input).experience).toBe(bcScore({ ...input, skilledWorkExperience: false }).experience)
+  })
   it('the default mid profile is eligible', () => {
     // CLB 7, 2-3 years experience, $30/hr in Area 3 all meet the minimums
     const result = eligibility(base())

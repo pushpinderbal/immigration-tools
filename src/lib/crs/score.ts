@@ -2,7 +2,7 @@
  * CRS scoring engine - pure functions, zero framework dependencies.
  *
  * Verified against IRCC "Comprehensive Ranking System (CRS) criteria"
- * (canada.ca, updated 2026-06-22) and the official CRS tool's worked examples.
+ * and the announced Labour Market Integration factor effective 2026-11-03.
  */
 
 import {
@@ -13,7 +13,6 @@ import {
   MAX_CORE_WITHOUT_SPOUSE,
   MAX_SPOUSE,
   MAX_TRANSFERABILITY,
-  MAX_TOTAL,
   SPOUSE_CANADIAN_WORK_TABLE,
   SPOUSE_EDUCATION_TABLE,
   agePoints,
@@ -31,6 +30,7 @@ import {
 } from './tables'
 import { ADDITIONAL_CANADIAN_EDUCATION_TABLE, EDUCATION_TABLE } from './tables'
 import type { CrsBreakdown, CrsInput } from './types'
+import { labourMarketIntegrationPoints, maximumCrsScore, usesLabourMarketIntegration } from './labour-market'
 
 /** A. Core / human capital factors. Capped at 460 (with spouse) or 500 (without). */
 export function coreHumanCapitalPoints(input: CrsInput): number {
@@ -39,7 +39,9 @@ export function coreHumanCapitalPoints(input: CrsInput): number {
   const age = agePoints(input.age, withSpouse)
   const education = EDUCATION_TABLE[input.education][withSpouse ? 0 : 1]
   const languages = languageProficiencyPoints(input, withSpouse)
-  const canadianWork = CANADIAN_WORK_TABLE[input.canadianWorkYears][withSpouse ? 0 : 1]
+  const canadianWork = usesLabourMarketIntegration(input)
+    ? 0
+    : CANADIAN_WORK_TABLE[input.canadianWorkYears][withSpouse ? 0 : 1]
 
   const cap = withSpouse ? MAX_CORE_WITH_SPOUSE : MAX_CORE_WITHOUT_SPOUSE
   return clamp(age + education + languages + canadianWork, 0, cap)
@@ -122,6 +124,7 @@ export function crsScore(input: CrsInput): CrsBreakdown {
   const spouse = spousePoints(input)
   const transferability = transferabilityPoints(input)
   const additional = additionalPoints(input)
-  const total = clamp(core + spouse + transferability + additional, 0, MAX_TOTAL)
-  return { core, spouse, transferability, additional, total }
+  const labourMarketIntegration = labourMarketIntegrationPoints(input)
+  const total = clamp(core + spouse + transferability + additional + labourMarketIntegration, 0, maximumCrsScore(input))
+  return { core, spouse, transferability, additional, labourMarketIntegration, total }
 }

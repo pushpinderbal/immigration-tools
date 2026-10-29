@@ -92,6 +92,10 @@ export function HomePage() {
         </div>
       </div>
       <p className="home-guidance">
+        Calculators currently cover selected worker programs in five provinces.{' '}
+        <Link to="/programs" className="text-accent underline">See coverage and official guides for all provinces and territories</Link>.
+      </p>
+      <p className="home-guidance">
         Each calculator uses its own program’s scoring system. Scores from different programs are not directly
         comparable.
       </p>

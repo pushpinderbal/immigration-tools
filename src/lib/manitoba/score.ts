@@ -1,7 +1,7 @@
 /**
  * MPNP EOI scoring - Manitoba Provincial Nominee Program, Skilled Worker streams.
  *
- * Source: Manitoba "Expression of Interest" (Immigrate Manitoba, updated 2026-04-20)
+ * Source: Manitoba "Expression of Interest" (Immigrate Manitoba, checked 2026-10-28)
  * https://immigratemanitoba.com/mpnp/apply/eoi/
  *
  * Six factors, out of 1000 points:
@@ -49,6 +49,7 @@ export interface ManitobaRisk {
 }
 
 export interface ManitobaInput {
+  occupationTeer?: 0 | 1 | 2 | 3 | 4 | 5
   /** CLB/NCLC band of the first official language for each ability, 0 if no result. */
   firstLanguageClbs: ManitobaLanguageClbs
   /** Declared second official language with an overall CLB/NCLC of 5 or higher. */
@@ -188,9 +189,9 @@ export function adaptabilityPoints(
 ): number {
   const connection = connectionsPoints(connections)
   const demandScore = demandPoints(demand)
-  // Regional development points are supplemental. They require another
-  // Manitoba connection, except that Manitoba Demand is itself sufficient.
-  const regional = regionalDevelopmentOutsideWinnipeg && (connection > 0 || demandScore > 0) ? 50 : 0
+  // Regional development requires a qualifying connection outside the
+  // Manitoba Capital Region. Manitoba Demand already reaches the 500-point cap.
+  const regional = regionalDevelopmentOutsideWinnipeg && connection > 0 ? 50 : 0
   const subtotal = connection + demandScore + regional
   return Math.min(MAX_ADAPTABILITY, subtotal)
 }
@@ -230,7 +231,7 @@ export function manitobaScore(input: ManitobaInput): ManitobaBreakdown {
 // --- Eligibility determination ---
 //
 // Separate from the 1000-point EOI ranking: candidates must score at least
-// 60 out of 100 on the MPNP eligibility assessment grid and hold a
+// 60 out of 100 for Skilled Worker Overseas, plus an established
 // connection to Manitoba. Source: MPNP EOI eligibility grid
 // (immigratemanitoba.com/mpnp/apply/eoi/, updated 2026-04-20).
 
@@ -331,8 +332,8 @@ export function eligibility(input: ManitobaInput): ManitobaEligibility {
   const reasons: string[] = []
 
   const clb = overallClb(input.firstLanguageClbs)
-  if (clb < 4) {
-    reasons.push('MPNP requires a minimum of CLB 4 in your first official language.')
+  if ((input.occupationTeer ?? 4) >= 4 && clb < 4) {
+    reasons.push('TEER 4 and 5 occupations require at least CLB/NCLC 4 in each first-language ability. Select your occupation TEER to check this requirement.')
   }
 
   if (!hasManitobaConnection(input)) {
@@ -342,9 +343,9 @@ export function eligibility(input: ManitobaInput): ManitobaEligibility {
   }
 
   const assessment = eligibilityAssessmentScore(input)
-  if (assessment < MIN_ELIGIBILITY_SCORE) {
+  if (!input.demand.ongoingEmploymentJobOffer && assessment < MIN_ELIGIBILITY_SCORE) {
     reasons.push(
-      `You scored ${assessment} out of 100 on the MPNP eligibility assessment, but you need at least ${MIN_ELIGIBILITY_SCORE}.`,
+      `You scored ${assessment} out of 100 on the Skilled Worker Overseas assessment, but you need at least ${MIN_ELIGIBILITY_SCORE}.`,
     )
   }
 

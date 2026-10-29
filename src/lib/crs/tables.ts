@@ -3,11 +3,12 @@
  *
  * Source: IRCC, "Comprehensive Ranking System (CRS) criteria"
  * https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html
- * Page updated 2026-06-22.
+ * Checked 2026-10-28, with the November 3 changes in labour-market.ts.
  *
  * Notes on the current rules:
  *  - Job offer (arranged employment) points were removed by IRCC on 2025-03-25 and
- *    are intentionally absent.
+ *    stay absent from additional points. From 2026-11-03, eligible high-wage
+ *    offers are assessed separately in the Labour Market Integration factor.
  *  - Skill transferability: the education sub-category and the foreign work
  *    sub-category each cap at 50 points (the two tables within each sub-category
  *    add together up to that cap); the whole section caps at 100 points.

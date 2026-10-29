@@ -9,7 +9,8 @@ export function EligibilityBanner({ eligible, reasons }: { eligible: boolean; re
           <path d="m8.5 12.5 2.5 2.5 4.5-5" />
         </svg>
         <div>
-          <p className="text-sm font-semibold text-ink">You appear eligible</p>
+          <p className="text-sm font-semibold text-ink">Initial checks passed</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted">Based on the information entered. Review all stream requirements before applying.</p>
           {notes.length > 0 && (
             <p className="mt-0.5 text-xs leading-relaxed text-muted">{notes.join(' ')}</p>
           )}
@@ -25,7 +26,7 @@ export function EligibilityBanner({ eligible, reasons }: { eligible: boolean; re
         <path d="M12 8v4M12 16h.01" />
       </svg>
       <div>
-        <p className="text-sm font-semibold text-ink">Not eligible yet</p>
+        <p className="text-sm font-semibold text-ink">Requirements to review</p>
         <ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted">
           {notes.map((r) => (
             <li key={r}>{r}</li>

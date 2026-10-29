@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useCalculatorForm } from '../../hooks/useCalculatorForm'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
-import { LanguageTestInputs } from '../../components/LanguageTestInputs'
+import { LanguageTestInputs, OptionalLanguageTestInputs } from '../../components/LanguageTestInputs'
 import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
-import { FormSections, CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
-import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
+import { FormSections, Note, CheckRow, Field, Section, Segmented, Select, Slider } from '../../components/ui'
+import { ENGLISH_TESTS, FRENCH_TESTS, convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
   AB_DOC,
@@ -77,9 +78,6 @@ const JOB_LOCATION_OPTIONS: ReadonlyArray<{ value: JobLocation | ''; label: stri
   { value: 'other', label: 'Other Alberta community' },
 ]
 
-const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const FRENCH_TESTS = ['tef', 'tcf'] as const
-
 interface AlbertaUiState {
   education: EducationLevel | ''
   educationLocation: EducationLocation | ''
@@ -113,8 +111,7 @@ const DEFAULT_UI: AlbertaUiState = {
 }
 
 export function AlbertaTool() {
-  const [ui, setUi] = useState<AlbertaUiState>(DEFAULT_UI)
-  const [hasStarted, setHasStarted] = useState(false)
+  const { values: ui, patch, hasStarted } = useCalculatorForm<AlbertaUiState>(DEFAULT_UI)
 
   const input = useMemo<AlbertaInput>(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
@@ -139,11 +136,6 @@ export function AlbertaTool() {
   const score = useMemo(() => albertaScore(input), [input])
 
   const eligibilityResult = useMemo(() => eligibility(input), [input])
-
-  const patch = (p: Partial<AlbertaUiState>) => {
-    setHasStarted(true)
-    setUi((prev) => ({ ...prev, ...p }))
-  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -170,6 +162,11 @@ export function AlbertaTool() {
 
       <div className="tool-workspace">
         <FormSections>
+          <Note>
+            Points grid checked October 28, 2026 (September 28, 2026 edition). The check above covers only the
+            Worker EOI language minimum. Job offers and experience requirements vary by stream. Confirm eligibility
+            for at least one AAIP stream before registering. Wages and work hours can affect selection but add no grid points.
+          </Note>
           <Section title="Human capital" help={AB_DOC}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Highest level of education" help={AB_DOC}>
@@ -198,23 +195,14 @@ export function AlbertaTool() {
                 onChange={(next) => patch({ english: next })}
                 help={AB_DOC}
               />
-              {ui.french.test === 'none' ? (
-                <button
-                  type="button"
-                  onClick={() => patch({ french: { test: 'tef', scores: emptyScores() } })}
-                  className="add-language flex w-full items-center justify-center gap-2 text-sm"
-                >
-                  <span aria-hidden="true">+</span> Add French test
-                </button>
-              ) : (
-                <LanguageTestInputs
-                  title="French"
-                  allowedTests={FRENCH_TESTS}
-                  value={ui.french}
-                  onChange={(next) => patch({ french: next })}
-                  help={AB_DOC}
-                />
-              )}
+              <OptionalLanguageTestInputs
+                title="French"
+                addLabel="Add French test"
+                allowedTests={FRENCH_TESTS}
+                value={ui.french}
+                onChange={(next) => patch({ french: next })}
+                help={AB_DOC}
+              />
               <CheckRow
                 label="Bilingual (CLB/NCLC 4+ in both English and French)"
                 checked={ui.bilingual}

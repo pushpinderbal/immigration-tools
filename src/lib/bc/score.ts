@@ -24,6 +24,14 @@ export type EducationLocation = 'bc' | 'canada-outside-bc' | 'none'
 export type AreaBand = 'area-1' | 'area-2' | 'area-3'
 
 export interface BcInput {
+  jobNoc?: string
+  /** Two years of qualifying skilled work, distinct from directly related ranking experience. */
+  skilledWorkExperience?: boolean
+  familySize?: number
+  weeklyHours?: number
+  incomeArea?: AreaBand
+  /** Eligible spouse's regular annual B.C. wages, with valid work authorization. */
+  spouseAnnualIncome?: number
   /** Directly related work experience band. */
   workExperience: WorkExperienceBand
   /** At least 1 year of directly related experience in Canada. */
@@ -152,7 +160,7 @@ export function areaPoints(area: AreaBand, regionalExperience: boolean): number 
 export function bcScore(input: BcInput): BcBreakdown {
   const experience =
     workExperiencePoints(input.workExperience) +
-    (input.canadianExperience ? 10 : 0) +
+    (input.canadianExperience && !['none', 'less-1'].includes(input.workExperience) ? 10 : 0) +
     (input.workingInBc ? 10 : 0)
 
   // The location bonus is only available when the highest credential is
@@ -180,52 +188,55 @@ export interface Eligibility {
   reasons: string[]
 }
 
-/** Hours per year used to annualize an hourly wage for the minimum income test (guide section 3.10). */
-const HOURS_PER_YEAR = 40 * 52
+/** June 10, 2026 guide, section 3.10. Residence determines the income area. */
+const MINIMUM_INCOME = [
+  [31264, 26057], [38922, 32437], [47851, 39878], [58096, 48418],
+  [65892, 54914], [74315, 61935], [82739, 68955],
+] as const
 
-/** 2024 Low-Income Cut-Off for a single-person household (guide section 3.10). */
-const LICO_METRO_VANCOUVER_SINGLE = 31264
-const LICO_REST_OF_BC_SINGLE = 26057
+export const INELIGIBLE_NOCS = ['12100', '12101', '12200', '13100', '13110', '13111', '13112', '62010', '62020', '63101', '41302', '42204'] as const
 
-/** Bands that meet the Skilled Worker two-year experience minimum (guide section 4.1 (c)). */
 const MIN_EXPERIENCE_BANDS: readonly WorkExperienceBand[] = ['2-3', '3-4', '4-5', '5-plus']
 
-/**
- * Minimum hourly wage implied by the single-person LICO minimum income for an area.
- * The BC PNP applies the minimum income by family size, but the calculator does not
- * collect dependants, so the single-person floor is used as the general minimum.
- */
-export function minimumIncomeWage(area: AreaBand): number {
-  const lico = area === 'area-1' ? LICO_METRO_VANCOUVER_SINGLE : LICO_REST_OF_BC_SINGLE
-  // Round up to the next cent so the annualized wage cannot fall below the
-  // published income threshold due to rounding down.
-  return Math.ceil((lico / HOURS_PER_YEAR) * 100) / 100
+export function minimumFamilyIncome(area: AreaBand, familySize: number = 1): number {
+  const index = Math.min(7, Math.max(1, Math.floor(familySize))) - 1
+  return MINIMUM_INCOME[index]![area === 'area-1' ? 0 : 1]
+}
+
+export function minimumIncomeWage(area: AreaBand, familySize: number = 1, weeklyHours: number = 40, spouseAnnualIncome: number = 0): number {
+  const remaining = Math.max(0, minimumFamilyIncome(area, familySize) - Math.max(0, spouseAnnualIncome))
+  return Math.ceil((remaining / (Math.min(40, Math.max(1, weeklyHours)) * 52)) * 100) / 100
 }
 
 /**
  * Eligibility check separate from the registration score. A candidate can score
  * points yet still be ineligible. Uses the general requirements in Part 3 of the
  * Skills Immigration Program Guide plus the Skilled Worker experience minimum in
- * section 4.1. The CLB 4 language floor applies to NOC TEER 2, 3, 4 and 5
- * occupations, which the calculator assumes as the general case.
+ * section 4.1. NOC TEER 0 and 1 do not require a language test at registration
+ * unless claiming language points. An omitted NOC uses the CLB 4 floor.
  */
 export function eligibility(input: BcInput): Eligibility {
   const reasons: string[] = []
 
   const bestClb = Math.max(input.englishClb, input.frenchClb)
-  if (bestClb < 4) {
+  const noc = input.jobNoc?.trim() ?? ''
+  const languageRequired = !/^[0-9][01][0-9]{3}$/.test(noc)
+  if (languageRequired && bestClb < 4) {
     reasons.push('Your language test results are below the minimum requirement of CLB 4 in each of the four competencies.')
   }
 
-  const wageFloor = minimumIncomeWage(input.area)
+  if ((INELIGIBLE_NOCS as readonly string[]).includes(noc)) {
+    reasons.push(`NOC ${noc} is ineligible for Skills Immigration applications submitted after June 13, 2026.`)
+  }
+  const wageFloor = minimumIncomeWage(input.incomeArea ?? input.area, input.familySize, input.weeklyHours, input.spouseAnnualIncome)
   if (input.hourlyWage < wageFloor) {
     reasons.push(
       `Your offered hourly wage of $${input.hourlyWage.toFixed(2)} is below the minimum income floor of $${wageFloor.toFixed(2)} per hour for your area of B.C.`,
     )
   }
 
-  if (!MIN_EXPERIENCE_BANDS.includes(input.workExperience)) {
-    reasons.push('You need at least two years of full-time (or full-time equivalent) directly related work experience.')
+  if (!(input.skilledWorkExperience ?? MIN_EXPERIENCE_BANDS.includes(input.workExperience))) {
+    reasons.push('You need at least two years of full-time (or full-time equivalent) qualifying skilled work experience. This need not all be directly related to the job offer.')
   }
 
   return { eligible: reasons.length === 0, reasons }

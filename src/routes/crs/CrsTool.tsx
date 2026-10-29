@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { LanguageTestInputs } from '../../components/LanguageTestInputs'
+import { LanguageTestInputs, OptionalLanguageTestInputs } from '../../components/LanguageTestInputs'
 import { Recommendations } from '../../components/Recommendations'
 import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
@@ -7,18 +7,19 @@ import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { DrawFeed } from '../../components/DrawFeed'
 import { FormSections, CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
-import { convertTestToClb, emptyScores } from '../../lib/crs/languages'
+import { ENGLISH_TESTS, FRENCH_TESTS, convertTestToClb, emptyScores } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
+import { HighWageFields } from './HighWageFields'
+import { CRS_CHANGES_DOC, currentCrsRules, maximumCrsScore, usesLabourMarketIntegration, MAX_LMIF_WITH_SPOUSE, MAX_LMIF_WITHOUT_SPOUSE } from '../../lib/crs/labour-market'
 import { crsScore } from '../../lib/crs/score'
 import {
   MAX_ADDITIONAL,
   MAX_CORE_WITH_SPOUSE,
   MAX_CORE_WITHOUT_SPOUSE,
   MAX_SPOUSE,
-  MAX_TOTAL,
   MAX_TRANSFERABILITY,
 } from '../../lib/crs/tables'
-import type { CrsBreakdown, CrsInput, EducationLevel, WorkYears } from '../../lib/crs/types'
+import type { CrsBreakdown, CrsInput, CrsRules, EducationLevel, WorkYears } from '../../lib/crs/types'
 import type { CanadianEducation } from '../../lib/crs/types'
 
 const IRCC_GRID =
@@ -55,9 +56,7 @@ const CANADIAN_EDUCATION_OPTIONS: ReadonlyArray<{ value: CanadianEducation | '';
   { value: 'three-plus-years', label: '3+ years' },
 ]
 
-const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const FRENCH_TESTS = ['tef', 'tcf'] as const
-const ALL_TESTS = ['ielts', 'celpip', 'pte', 'tef', 'tcf'] as const
+const ALL_TESTS = [...ENGLISH_TESTS, ...FRENCH_TESTS]
 
 interface SpouseUi {
   education: EducationLevel | ''
@@ -66,6 +65,10 @@ interface SpouseUi {
 }
 
 interface CrsUiState {
+  rules: CrsRules
+  jobOfferNoc: string
+  qualifyingJobOffer: boolean
+  highWageWork: NonNullable<CrsInput['highWageWork']>
   age: number
   hasAccompanyingSpouse: boolean
   education: EducationLevel | ''
@@ -90,6 +93,10 @@ const DEFAULT_SPOUSE: SpouseUi = {
 }
 
 const DEFAULT_UI: CrsUiState = {
+  rules: 'before-2026-11-03',
+  jobOfferNoc: '',
+  qualifyingJobOffer: false,
+  highWageWork: [],
   age: 17,
   hasAccompanyingSpouse: false,
   education: '',
@@ -105,7 +112,7 @@ const DEFAULT_UI: CrsUiState = {
 }
 
 export function CrsTool() {
-  const [ui, setUi] = useState<CrsUiState>(DEFAULT_UI)
+  const [ui, setUi] = useState<CrsUiState>(() => ({ ...DEFAULT_UI, rules: currentCrsRules() }))
 
   const input = useMemo<CrsInput>(() => {
     const english = convertTestToClb(ui.english.test, ui.english.scores)
@@ -113,6 +120,10 @@ export function CrsTool() {
     const spouseLanguage = convertTestToClb(ui.spouse?.test.test ?? 'none', ui.spouse?.test.scores ?? emptyScores())
 
     return {
+      rules: ui.rules,
+      jobOfferNoc: ui.jobOfferNoc,
+      qualifyingJobOffer: ui.qualifyingJobOffer,
+      highWageWork: ui.highWageWork,
       age: ui.age,
       hasAccompanyingSpouse: ui.hasAccompanyingSpouse,
       education: (ui.education === '' ? 'less-than-secondary' : ui.education) as EducationLevel,
@@ -151,10 +162,6 @@ export function CrsTool() {
   const secondTitle = ui.firstOfficialLanguage === 'french' ? 'English' : 'French'
   const secondTests = ui.firstOfficialLanguage === 'french' ? ENGLISH_TESTS : FRENCH_TESTS
 
-  const addSecondLanguage = () => {
-    patch({ [secondKey]: { test: secondTests[0], scores: emptyScores() } })
-  }
-
   const setSpouseFlag = (v: 'no' | 'yes') => {
     setUi((prev) => ({
       ...prev,
@@ -179,14 +186,26 @@ export function CrsTool() {
         <p className="tool-kicker">Federal · Express Entry</p>
         <h1 className="tool-title mt-3">CRS Calculator</h1>
         <p className="tool-description">
-          Express Entry ranks every candidate out of 1200. Enter your details and see your score, with a breakdown of
-          how each factor was awarded.
+          Estimate your Express Entry ranking points under the current rules or preview the November 3, 2026 changes.
+          A CRS score does not establish eligibility for an immigration program.
         </p>
       </div>
 
       <div className="tool-workspace">
         <FormSections>
           <Section title="Profile" help={IRCC_GRID}>
+            <Field label="Scoring rules" help={CRS_CHANGES_DOC}>
+              <Select ariaLabel="Scoring rules" value={ui.rules}
+                onChange={(rules) => patch({ rules: rules as CrsRules })}
+                options={[
+                  { value: 'before-2026-11-03', label: 'March 25, 2025 to November 2, 2026' },
+                  { value: 'from-2026-11-03', label: 'From November 3, 2026 (high-wage rules)' },
+                ]} />
+            </Field>
+            <Note>
+              Rules checked October 28, 2026. The high-wage rules take effect November 3, 2026.
+              Select a rule version to compare scores. Historical draws used the rules in force on their draw date.
+            </Note>
             <div className="grid gap-3 sm:grid-cols-2">
               <Slider
                 label="Age"
@@ -276,23 +295,14 @@ export function CrsTool() {
                 help={IRCC_LANGUAGE}
               />
             )}
-            {secondLang.test === 'none' ? (
-              <button
-                type="button"
-                onClick={addSecondLanguage}
-                className="add-language flex w-full items-center justify-center gap-2 text-sm"
-              >
-                <span aria-hidden="true">+</span> Add {secondTitle} test
-              </button>
-            ) : (
-              <LanguageTestInputs
-                title={`${secondTitle} (second language)`}
-                allowedTests={secondTests}
-                value={secondLang}
-                onChange={(next) => patch({ [secondKey]: next })}
-                help={IRCC_LANGUAGE}
-              />
-            )}
+            <OptionalLanguageTestInputs
+              title={`${secondTitle} (second language)`}
+              addLabel={`Add ${secondTitle} test`}
+              allowedTests={secondTests}
+              value={secondLang}
+              onChange={(next) => patch({ [secondKey]: next })}
+              help={IRCC_LANGUAGE}
+            />
           </Section>
 
           {ui.hasAccompanyingSpouse && (
@@ -327,6 +337,13 @@ export function CrsTool() {
             </Section>
           )}
 
+          {usesLabourMarketIntegration(input) && (
+            <Section title="Labour market integration" help={CRS_CHANGES_DOC}>
+              <HighWageFields input={input} onChange={(changes) => patch(changes)} />
+              <Note>The gauge maximum of 1270 is the sum of the published factor maxima, pending IRCC's updated overall grid.</Note>
+            </Section>
+          )}
+
           <Section title="Additional points" help={IRCC_GRID}>
             <div className="space-y-3">
               <CheckRow
@@ -347,7 +364,7 @@ export function CrsTool() {
                 onChange={(v) => patch({ certificateOfQualification: v })}
                 help={IRCC_GRID}
               />
-              <Note>No points for LMIA-backed job offers.</Note>
+              {!usesLabourMarketIntegration(input) && <Note>From March 25, 2025 through November 2, 2026, job offers earn no CRS points. Switch scoring rules to preview the announced high-wage changes.</Note>}
             </div>
           </Section>
 
@@ -357,8 +374,8 @@ export function CrsTool() {
         <ToolSidebar
           label="Estimated CRS score"
           total={score.total}
-          max={MAX_TOTAL}
-          breakdown={<ScorePanel score={score} withSpouse={ui.hasAccompanyingSpouse} />}
+          max={maximumCrsScore(input)}
+          breakdown={<ScorePanel score={score} withSpouse={ui.hasAccompanyingSpouse} usesLmif={usesLabourMarketIntegration(input)} />}
           draws={<DrawFeed />}
         />
       </div>
@@ -366,13 +383,14 @@ export function CrsTool() {
   )
 }
 
-function ScorePanel({ score, withSpouse }: { score: CrsBreakdown; withSpouse: boolean }) {
+function ScorePanel({ score, withSpouse, usesLmif }: { score: CrsBreakdown; withSpouse: boolean; usesLmif: boolean }) {
   const rows: Array<{ label: string; value: number; max?: number }> = [
-    { label: 'Core', value: score.core, max: withSpouse ? MAX_CORE_WITH_SPOUSE : MAX_CORE_WITHOUT_SPOUSE },
+    { label: 'Core', value: score.core, max: (withSpouse ? MAX_CORE_WITH_SPOUSE : MAX_CORE_WITHOUT_SPOUSE) - (usesLmif ? (withSpouse ? 70 : 80) : 0) },
     { label: 'Spouse', value: score.spouse, max: withSpouse ? MAX_SPOUSE : undefined },
     { label: 'Transferability', value: score.transferability, max: MAX_TRANSFERABILITY },
     { label: 'Additional', value: score.additional, max: MAX_ADDITIONAL },
   ]
+  if (usesLmif) rows.push({ label: 'Labour market integration', value: score.labourMarketIntegration, max: withSpouse ? MAX_LMIF_WITH_SPOUSE : MAX_LMIF_WITHOUT_SPOUSE })
   return (
     <ScoreCard
       variant="breakdown"

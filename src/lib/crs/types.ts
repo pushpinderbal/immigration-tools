@@ -31,7 +31,20 @@ export interface SpouseProfile {
   canadianWorkYears: WorkYears
 }
 
+export type CrsRules = 'before-2026-11-03' | 'from-2026-11-03'
+
+export interface HighWageWorkPeriod {
+  noc: string
+  /** Non-overlapping full-time-equivalent months of qualifying Canadian work. */
+  months: number
+}
+
 export interface CrsInput {
+  /** Explicit rule version keeps scoring deterministic. Omitted means the pre-November grid. */
+  rules?: CrsRules
+  qualifyingJobOffer?: boolean
+  jobOfferNoc?: string
+  highWageWork?: readonly HighWageWorkPeriod[]
   age: number
   /** Accompanying spouse/common-law partner who is not a citizen or PR of Canada. */
   hasAccompanyingSpouse: boolean
@@ -50,6 +63,7 @@ export interface CrsInput {
 
 export interface CrsBreakdown {
   core: number
+  labourMarketIntegration: number
   spouse: number
   transferability: number
   additional: number

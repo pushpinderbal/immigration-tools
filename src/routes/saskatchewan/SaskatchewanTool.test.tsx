@@ -37,21 +37,35 @@ function fillStandardProfile() {
 }
 
 describe('SaskatchewanTool', () => {
+  it('scores French as the first official language using the full first-language table', () => {
+    renderSask()
+    fillStandardProfile()
+    fireEvent.change(screen.getByLabelText('First official language'), { target: { value: 'french' } })
+    fireEvent.change(screen.getByLabelText('French (first official language) test'), { target: { value: 'tef' } })
+    const scores: Record<string, string> = { listening: '434', reading: '434', writing: '428', speaking: '456' }
+    for (const [ability, score] of Object.entries(scores)) {
+      fireEvent.change(screen.getByLabelText(`French (first official language) ${ability}`), { target: { value: score } })
+    }
+    expect(total()).toBe('78')
+    fireEvent.click(screen.getByRole('button', { name: /Add second language test/ }))
+    const tests = screen.getByLabelText('English (second official language) test') as HTMLSelectElement
+    expect(Array.from(tests.options).map((option) => option.value)).toEqual(['none', 'ielts', 'celpip', 'pte'])
+  })
   it('waits for an answer before showing eligibility', () => {
     renderSask()
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
-    expect(screen.queryByText('You appear eligible')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
+    expect(screen.queryByText('Initial checks passed')).toBeNull()
     const education = screen.getByLabelText('Highest level of education or training')
     fireEvent.focus(education)
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
     fireEvent.change(education, { target: { value: 'bachelor' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
   })
 
   it('starts blank with a near-zero score', () => {
     renderSask()
-    // education 12 (certificate, lowest band) is the only points-bearing fallback
-    expect(total()).toBe('12')
+    // Unanswered education does not award credential points.
+    expect(total()).toBe('0')
   })
 
   it('renders the score for the standard profile', () => {
@@ -120,8 +134,8 @@ describe('SaskatchewanTool', () => {
   it('shows the eligible banner for the standard profile', () => {
     renderSask()
     fillStandardProfile()
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
   })
 
   it('shows the not eligible banner with reasons when criteria are not met', () => {
@@ -131,7 +145,7 @@ describe('SaskatchewanTool', () => {
     fireEvent.change(screen.getByLabelText('Skilled work experience (6-10 years prior)'), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('checkbox', { name: /Close family relative in Saskatchewan/ }))
     // points 50 (below 60) and no work experience both fail; language stays at CLB 7
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
     expect(screen.getByText(/You must score at least 60 points/)).toBeTruthy()
     expect(screen.getByText(/one year of full-time paid work experience/)).toBeTruthy()
   })
@@ -141,6 +155,6 @@ describe('SaskatchewanTool', () => {
     fillStandardProfile()
     fireEvent.click(screen.getByRole('button', { name: 'Employment Offer' }))
     fireEvent.click(screen.getByRole('checkbox', { name: /High-skilled job offer/ }))
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
   })
 })

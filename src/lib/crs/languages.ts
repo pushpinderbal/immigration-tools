@@ -18,6 +18,9 @@ import type { Clb, LanguageAbility, LanguageProficiency } from './types'
 
 export type LanguageTestId = 'none' | 'ielts' | 'celpip' | 'pte' | 'tef' | 'tcf'
 
+export const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
+export const FRENCH_TESTS = ['tef', 'tcf'] as const
+
 export type LanguageScores = Record<LanguageAbility, number>
 
 export interface LanguageTestState {

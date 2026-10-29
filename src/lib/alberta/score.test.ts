@@ -202,59 +202,18 @@ describe('AAIP Worker EOI total', () => {
   })
 })
 
-describe('AAIP worker stream eligibility (separate from points)', () => {
-  it('default input is ineligible because it lacks a job offer despite scoring points', () => {
-    const result = eligibility(base())
-    expect(result.eligible).toBe(false)
-    expect(result.reasons).toHaveLength(1)
-    expect(result.reasons[0]).toMatch(/full-time job offer/)
+describe('AAIP WEOI initial checks', () => {
+  it('does not invent a universal job-offer or work-experience requirement', () => {
+    expect(eligibility(base({ totalExperience: 'less-6' }))).toEqual({ eligible: true, reasons: [] })
   })
-
-  it('is eligible with a permanent full-time Alberta job offer and no other blockers', () => {
-    const result = eligibility(base({ permanentJobOffer: true }))
-    expect(result.eligible).toBe(true)
-    expect(result.reasons).toEqual([])
+  it('requires CLB/NCLC 4 in either language across all four abilities', () => {
+    expect(eligibility(base({ englishClb: 3 })).eligible).toBe(false)
+    expect(eligibility(base({ englishClb: 0, frenchClb: 4 })).eligible).toBe(true)
   })
-
-  it('a select rural or sector job offer also satisfies the job offer requirement', () => {
-    expect(eligibility(base({ sectorJobOffer: 'rural-renewal' })).eligible).toBe(true)
-    expect(eligibility(base({ sectorJobOffer: 'tourism-hospitality' })).eligible).toBe(true)
-    expect(eligibility(base({ sectorJobOffer: 'law-enforcement' })).eligible).toBe(true)
+  it('does not award job location or regulated-offer points without an offer', () => {
+    expect(albertaScore(base({ jobLocation: 'other', regulatedOccupation: true }))).toMatchObject({ location: 0, regulated: 0 })
   })
-
-  it('fails when the best language result is below CLB 4', () => {
-    const result = eligibility(base({ permanentJobOffer: true, englishClb: 3, frenchClb: 0 }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons[0]).toMatch(/CLB 4/)
-  })
-
-  it('a French result of CLB 4 or better satisfies the language requirement', () => {
-    const result = eligibility(base({ permanentJobOffer: true, englishClb: 0, frenchClb: 4 }))
-    expect(result.eligible).toBe(true)
-  })
-
-  it('fails when total work experience is below 12 months', () => {
-    const result = eligibility(base({ permanentJobOffer: true, totalExperience: '6-11' }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons[0]).toMatch(/12 months/)
-  })
-
-  it('uses the Tourism and Hospitality stream 6-month experience floor', () => {
-    expect(
-      eligibility(base({ sectorJobOffer: 'tourism-hospitality', totalExperience: '6-11' })),
-    ).toEqual({ eligible: true, reasons: [] })
-
-    const result = eligibility(base({ sectorJobOffer: 'tourism-hospitality', totalExperience: 'less-6' }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons[0]).toMatch(/6 consecutive months/)
-  })
-
-  it('reports every unmet criterion in a single evaluation', () => {
-    const result = eligibility(base({ englishClb: 2, frenchClb: 0, totalExperience: 'less-6' }))
-    expect(result.eligible).toBe(false)
-    expect(result.reasons).toHaveLength(3)
-    expect(result.reasons[0]).toMatch(/full-time job offer/)
-    expect(result.reasons[1]).toMatch(/CLB 4/)
-    expect(result.reasons[2]).toMatch(/12 months/)
+  it('requires at least six months total experience to claim six months in Canada', () => {
+    expect(albertaScore(base({ totalExperience: 'less-6', canadianExperience: 'alberta' })).experience).toBe(3)
   })
 })

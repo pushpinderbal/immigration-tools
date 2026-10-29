@@ -31,15 +31,29 @@ function fillStandardProfile() {
 }
 
 describe('ManitobaTool', () => {
+  it('supports French first and restricts second-language tests to the other official language', () => {
+    renderManitoba()
+    fillStandardProfile()
+    fireEvent.change(screen.getByLabelText('First official language'), { target: { value: 'french' } })
+    fireEvent.change(screen.getByLabelText('French (first official language) test'), { target: { value: 'tef' } })
+    const scores: Record<string, string> = { listening: '434', reading: '434', writing: '428', speaking: '456' }
+    for (const [ability, score] of Object.entries(scores)) {
+      fireEvent.change(screen.getByLabelText(`French (first official language) ${ability}`), { target: { value: score } })
+    }
+    expect(total()).toBe('373')
+    fireEvent.click(screen.getByRole('button', { name: /Add second language test/ }))
+    const tests = screen.getByLabelText('Second official language test') as HTMLSelectElement
+    expect(Array.from(tests.options).map((option) => option.value)).toEqual(['none', 'ielts', 'celpip', 'pte'])
+  })
   it('waits for an answer before showing eligibility', () => {
     renderManitoba()
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
-    expect(screen.queryByText('You appear eligible')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
+    expect(screen.queryByText('Initial checks passed')).toBeNull()
     const education = screen.getByLabelText('Highest level of education')
     fireEvent.focus(education)
-    expect(screen.queryByText('Not eligible yet')).toBeNull()
+    expect(screen.queryByText('Requirements to review')).toBeNull()
     fireEvent.change(education, { target: { value: 'two-year' } })
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
   })
 
   it('starts blank with a near-zero score', () => {
@@ -88,9 +102,9 @@ describe('ManitobaTool', () => {
   it('shows the eligibility banner and flags a missing connection', () => {
     renderManitoba()
     fillStandardProfile()
-    expect(screen.getByText('You appear eligible')).toBeTruthy()
+    expect(screen.getByText('Initial checks passed')).toBeTruthy()
     fireEvent.click(screen.getByRole('checkbox', { name: /Close friend or distant relative/ }))
-    expect(screen.getByText('Not eligible yet')).toBeTruthy()
+    expect(screen.getByText('Requirements to review')).toBeTruthy()
     expect(screen.getByText(/connection to Manitoba/)).toBeTruthy()
   })
 })

@@ -281,6 +281,17 @@ describe('MPNP total', () => {
 })
 
 describe('MPNP eligibility', () => {
+  it('does not impose the TEER 4-5 language-test floor on skilled employment in TEER 0-3', () => {
+    expect(eligibility(base({ firstLanguageClbs: allClbs(0), occupationTeer: 1,
+      demand: { ongoingEmploymentJobOffer: true, strategicInitiativeIta: false } })).eligible).toBe(true)
+  })
+  it('does not impose the Overseas 60-point grid on Skilled Worker in Manitoba employment', () => {
+    const input = base({ firstLanguageClbs: allClbs(4), age: 50, workYears: 1,
+      education: 'no-post-secondary', demand: { ongoingEmploymentJobOffer: true, strategicInitiativeIta: false } })
+    expect(eligibilityAssessmentScore(input)).toBeLessThan(60)
+    expect(eligibility(input).eligible).toBe(true)
+    expect(eligibility({ ...input, demand: { ...input.demand, ongoingEmploymentJobOffer: false } }).eligible).toBe(false)
+  })
   it('eligibility adaptability uses one connection plus the regional supplement', () => {
     const connections: ManitobaInput['connections'] = {
       closeRelative: false,
@@ -330,7 +341,7 @@ describe('MPNP eligibility', () => {
   it('fails when the language floor is not met', () => {
     const result = eligibility(base({ firstLanguageClbs: allClbs(3) }))
     expect(result.eligible).toBe(false)
-    expect(result.reasons.some((r) => r.includes('CLB 4'))).toBe(true)
+    expect(result.reasons.some((r) => r.includes('CLB/NCLC 4'))).toBe(true)
   })
 
   it('fails when the 60-point assessment is not met', () => {
