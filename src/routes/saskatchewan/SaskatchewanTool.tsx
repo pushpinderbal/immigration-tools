@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useCalculatorForm } from '../../hooks/useCalculatorForm'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
-import { LanguageTestInputs } from '../../components/LanguageTestInputs'
+import { LanguageTestInputs, OptionalLanguageTestInputs } from '../../components/LanguageTestInputs'
 import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { FormSections, CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
-import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
+import { ENGLISH_TESTS, FRENCH_TESTS, convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
   MAX_AGE,
@@ -54,9 +55,6 @@ const PRIOR_WORK_OPTIONS = [
   { value: '4', label: '4 years' },
   { value: '5', label: '5+ years' },
 ]
-
-const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const FRENCH_TESTS = ['tef', 'tcf'] as const
 
 interface SinpUiState {
   firstOfficialLanguage: 'english' | 'french'
@@ -107,17 +105,11 @@ function buildInput(ui: SinpUiState): SinpInput {
 }
 
 export function SaskatchewanTool() {
-  const [ui, setUi] = useState<SinpUiState>(DEFAULT_UI)
-  const [hasStarted, setHasStarted] = useState(false)
+  const { values: ui, patch, hasStarted } = useCalculatorForm<SinpUiState>(DEFAULT_UI)
 
   const input = useMemo(() => buildInput(ui), [ui])
   const score = useMemo(() => sinpScore(input), [input])
   const eligibilityResult: Eligibility = useMemo(() => eligibility(input), [input])
-
-  const patch = (p: Partial<SinpUiState>) => {
-    setHasStarted(true)
-    setUi((prev) => ({ ...prev, ...p }))
-  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -201,23 +193,14 @@ export function SaskatchewanTool() {
               onChange={(next) => patch({ firstLanguage: next })}
               help={SASK_DOC}
             />
-            {ui.secondLanguage.test === 'none' ? (
-              <button
-                type="button"
-                onClick={() => patch({ secondLanguage: { test: ui.firstOfficialLanguage === 'english' ? 'tef' : 'ielts', scores: emptyScores() } })}
-                className="add-language flex w-full items-center justify-center gap-2 text-sm"
-              >
-                <span aria-hidden="true">+</span> Add second language test
-              </button>
-            ) : (
-              <LanguageTestInputs
-                title={`${ui.firstOfficialLanguage === 'english' ? 'French' : 'English'} (second official language)`}
-                allowedTests={ui.firstOfficialLanguage === 'english' ? FRENCH_TESTS : ENGLISH_TESTS}
-                value={ui.secondLanguage}
-                onChange={(next) => patch({ secondLanguage: next })}
-                help={SASK_DOC}
-              />
-            )}
+            <OptionalLanguageTestInputs
+              title={`${ui.firstOfficialLanguage === 'english' ? 'French' : 'English'} (second official language)`}
+              addLabel="Add second language test"
+              allowedTests={ui.firstOfficialLanguage === 'english' ? FRENCH_TESTS : ENGLISH_TESTS}
+              value={ui.secondLanguage}
+              onChange={(next) => patch({ secondLanguage: next })}
+              help={SASK_DOC}
+            />
             <Note>The language score uses the overall CLB of your first official language, with a smaller bonus for a second official language.</Note>
           </Section>
 

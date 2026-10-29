@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useCalculatorForm } from '../../hooks/useCalculatorForm'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
-import { LanguageTestInputs } from '../../components/LanguageTestInputs'
+import { LanguageTestInputs, OptionalLanguageTestInputs } from '../../components/LanguageTestInputs'
 import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { FormSections, CheckRow, Field, Note, NumberInput, Section, Select } from '../../components/ui'
-import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
+import { ENGLISH_TESTS, FRENCH_TESTS, convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
   MAX_EDUCATION,
@@ -111,9 +112,6 @@ const REGION_OPTIONS: ReadonlyArray<{ value: Region | ''; label: string }> = [
   { value: 'toronto', label: 'Toronto' },
 ]
 
-const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const FRENCH_TESTS = ['tef', 'tcf'] as const
-
 interface OinpUiState {
   pathway: 'job-offer' | 'physician'
   physicianRequirementsMet: boolean
@@ -161,8 +159,7 @@ const DEFAULT_UI: OinpUiState = {
 }
 
 export function OinpTool() {
-  const [ui, setUi] = useState<OinpUiState>(DEFAULT_UI)
-  const [hasStarted, setHasStarted] = useState(false)
+  const { values: ui, patch, hasStarted } = useCalculatorForm<OinpUiState>(DEFAULT_UI)
 
   const { score, eligibilityResult } = useMemo(() => {
     const englishClb = overallClb(convertTestToClb(ui.english.test, ui.english.scores))
@@ -191,11 +188,6 @@ export function OinpTool() {
     }
     return { score: oinpScore(input), eligibilityResult: eligibility(input) }
   }, [ui])
-
-  const patch = (p: Partial<OinpUiState>) => {
-    setHasStarted(true)
-    setUi((prev) => ({ ...prev, ...p }))
-  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -353,23 +345,14 @@ export function OinpTool() {
               onChange={(next) => patch({ english: next })}
               help={OINP_DOC}
             />
-            {ui.french.test === 'none' ? (
-              <button
-                type="button"
-                onClick={() => patch({ french: { test: 'tef', scores: emptyScores() } })}
-                className="add-language flex w-full items-center justify-center gap-2 text-sm"
-              >
-                <span aria-hidden="true">+</span> Add French test
-              </button>
-            ) : (
-              <LanguageTestInputs
-                title="French"
-                allowedTests={FRENCH_TESTS}
-                value={ui.french}
-                onChange={(next) => patch({ french: next })}
-                help={OINP_DOC}
-              />
-            )}
+            <OptionalLanguageTestInputs
+              title="French"
+              addLabel="Add French test"
+              allowedTests={FRENCH_TESTS}
+              value={ui.french}
+              onChange={(next) => patch({ french: next })}
+              help={OINP_DOC}
+            />
           </Section>
 
           <Section title="Regional immigration" help={OINP_DOC}>

@@ -77,19 +77,21 @@ function AbilityInput({
   )
 }
 
+interface LanguageTestInputsProps {
+  title: string
+  allowedTests: readonly Exclude<LanguageTestId, 'none'>[]
+  value: LanguageTestState
+  onChange: (next: LanguageTestState) => void
+  help?: string
+}
+
 export function LanguageTestInputs({
   title,
   allowedTests,
   value,
   onChange,
   help,
-}: {
-  title: string
-  allowedTests: readonly Exclude<LanguageTestId, 'none'>[]
-  value: LanguageTestState
-  onChange: (next: LanguageTestState) => void
-  help?: string
-}) {
+}: LanguageTestInputsProps) {
   const clb = useMemo(() => convertTestToClb(value.test, value.scores), [value])
   const scale = value.test === 'tef' || value.test === 'tcf' ? 'NCLC' : 'CLB'
 
@@ -144,5 +146,25 @@ export function LanguageTestInputs({
         </>
       )}
     </div>
+  )
+}
+
+export function OptionalLanguageTestInputs({
+  addLabel,
+  ...props
+}: Omit<LanguageTestInputsProps, 'allowedTests'> & {
+  addLabel: string
+  allowedTests: readonly [Exclude<LanguageTestId, 'none'>, ...Exclude<LanguageTestId, 'none'>[]]
+}) {
+  if (props.value.test !== 'none') return <LanguageTestInputs {...props} />
+
+  return (
+    <button
+      type="button"
+      onClick={() => props.onChange({ test: props.allowedTests[0], scores: emptyScores() })}
+      className="add-language flex w-full items-center justify-center gap-2 text-sm"
+    >
+      <span aria-hidden="true">+</span> {addLabel}
+    </button>
   )
 }

@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useCalculatorForm } from '../../hooks/useCalculatorForm'
 import { EligibilityBanner } from '../../components/EligibilityBanner'
-import { LanguageTestInputs } from '../../components/LanguageTestInputs'
+import { LanguageTestInputs, OptionalLanguageTestInputs } from '../../components/LanguageTestInputs'
 import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
 import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { FormSections, CheckRow, Field, Note, Section, Select, Slider } from '../../components/ui'
-import { convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
+import { ENGLISH_TESTS, FRENCH_TESTS, convertTestToClb, emptyScores, overallClb } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import {
   eligibility,
@@ -21,9 +22,6 @@ import {
   MB_LANGUAGE_DOC,
 } from '../../lib/manitoba/score'
 import type { ManitobaBreakdown, ManitobaEducation, ManitobaInput } from '../../lib/manitoba/score'
-
-const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const FRENCH_TESTS = ['tef', 'tcf'] as const
 
 const WORK_YEARS_OPTIONS = [
   { value: '', label: 'Select...' },
@@ -90,8 +88,7 @@ const DEFAULT_UI: ManitobaUiState = {
 }
 
 export function ManitobaTool() {
-  const [ui, setUi] = useState<ManitobaUiState>(DEFAULT_UI)
-  const [hasStarted, setHasStarted] = useState(false)
+  const { values: ui, patch, hasStarted } = useCalculatorForm<ManitobaUiState>(DEFAULT_UI)
 
   const input = useMemo<ManitobaInput>(() => {
     const firstLanguageClbs = convertTestToClb(ui.firstLanguage.test, ui.firstLanguage.scores)
@@ -126,15 +123,6 @@ export function ManitobaTool() {
   const score = useMemo(() => manitobaScore(input), [input])
 
   const eligibilityResult = useMemo(() => eligibility(input), [input])
-
-  const patch = (p: Partial<ManitobaUiState>) => {
-    setHasStarted(true)
-    setUi((prev) => ({ ...prev, ...p }))
-  }
-
-  const addSecondLanguage = () => {
-    patch({ secondLanguage: { test: ui.firstOfficialLanguage === 'english' ? 'tef' : 'ielts', scores: emptyScores() } })
-  }
 
   return (
     <div className="tool-page px-4 sm:px-6">
@@ -185,23 +173,14 @@ export function ManitobaTool() {
               onChange={(v) => patch({ hasSecondLanguage: v })}
               help={MB_LANGUAGE_DOC}
             />
-            {ui.secondLanguage.test === 'none' ? (
-              <button
-                type="button"
-                onClick={addSecondLanguage}
-                className="add-language flex w-full items-center justify-center gap-2 text-sm"
-              >
-                <span aria-hidden="true">+</span> Add second language test
-              </button>
-            ) : (
-              <LanguageTestInputs
-                title="Second official language"
-                allowedTests={ui.firstOfficialLanguage === 'english' ? FRENCH_TESTS : ENGLISH_TESTS}
-                value={ui.secondLanguage}
-                onChange={(next) => patch({ secondLanguage: next })}
-                help={MB_LANGUAGE_DOC}
-              />
-            )}
+            <OptionalLanguageTestInputs
+              title="Second official language"
+              addLabel="Add second language test"
+              allowedTests={ui.firstOfficialLanguage === 'english' ? FRENCH_TESTS : ENGLISH_TESTS}
+              value={ui.secondLanguage}
+              onChange={(next) => patch({ secondLanguage: next })}
+              help={MB_LANGUAGE_DOC}
+            />
             <Note>
               Language points are awarded for each ability band (reading, writing, listening, speaking)
               separately. The second official language is a flat 25 points at overall CLB 5 or higher.

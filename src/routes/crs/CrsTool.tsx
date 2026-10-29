@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { LanguageTestInputs } from '../../components/LanguageTestInputs'
+import { LanguageTestInputs, OptionalLanguageTestInputs } from '../../components/LanguageTestInputs'
 import { Recommendations } from '../../components/Recommendations'
 import { ScoreCard } from '../../components/ScoreCard'
 import { Seo } from '../../components/Seo'
@@ -7,7 +7,7 @@ import { ToolSidebar } from '../../components/ToolSidebar'
 import { ToolTiles } from '../../components/ToolTiles'
 import { DrawFeed } from '../../components/DrawFeed'
 import { FormSections, CheckRow, Field, Note, Section, Segmented, Select, Slider } from '../../components/ui'
-import { convertTestToClb, emptyScores } from '../../lib/crs/languages'
+import { ENGLISH_TESTS, FRENCH_TESTS, convertTestToClb, emptyScores } from '../../lib/crs/languages'
 import type { LanguageTestState } from '../../lib/crs/languages'
 import { HighWageFields } from './HighWageFields'
 import { CRS_CHANGES_DOC, currentCrsRules, maximumCrsScore, usesLabourMarketIntegration, MAX_LMIF_WITH_SPOUSE, MAX_LMIF_WITHOUT_SPOUSE } from '../../lib/crs/labour-market'
@@ -56,9 +56,7 @@ const CANADIAN_EDUCATION_OPTIONS: ReadonlyArray<{ value: CanadianEducation | '';
   { value: 'three-plus-years', label: '3+ years' },
 ]
 
-const ENGLISH_TESTS = ['ielts', 'celpip', 'pte'] as const
-const FRENCH_TESTS = ['tef', 'tcf'] as const
-const ALL_TESTS = ['ielts', 'celpip', 'pte', 'tef', 'tcf'] as const
+const ALL_TESTS = [...ENGLISH_TESTS, ...FRENCH_TESTS]
 
 interface SpouseUi {
   education: EducationLevel | ''
@@ -163,10 +161,6 @@ export function CrsTool() {
   const secondKey = ui.firstOfficialLanguage === 'french' ? 'english' : 'french'
   const secondTitle = ui.firstOfficialLanguage === 'french' ? 'English' : 'French'
   const secondTests = ui.firstOfficialLanguage === 'french' ? ENGLISH_TESTS : FRENCH_TESTS
-
-  const addSecondLanguage = () => {
-    patch({ [secondKey]: { test: secondTests[0], scores: emptyScores() } })
-  }
 
   const setSpouseFlag = (v: 'no' | 'yes') => {
     setUi((prev) => ({
@@ -301,23 +295,14 @@ export function CrsTool() {
                 help={IRCC_LANGUAGE}
               />
             )}
-            {secondLang.test === 'none' ? (
-              <button
-                type="button"
-                onClick={addSecondLanguage}
-                className="add-language flex w-full items-center justify-center gap-2 text-sm"
-              >
-                <span aria-hidden="true">+</span> Add {secondTitle} test
-              </button>
-            ) : (
-              <LanguageTestInputs
-                title={`${secondTitle} (second language)`}
-                allowedTests={secondTests}
-                value={secondLang}
-                onChange={(next) => patch({ [secondKey]: next })}
-                help={IRCC_LANGUAGE}
-              />
-            )}
+            <OptionalLanguageTestInputs
+              title={`${secondTitle} (second language)`}
+              addLabel={`Add ${secondTitle} test`}
+              allowedTests={secondTests}
+              value={secondLang}
+              onChange={(next) => patch({ [secondKey]: next })}
+              help={IRCC_LANGUAGE}
+            />
           </Section>
 
           {ui.hasAccompanyingSpouse && (
